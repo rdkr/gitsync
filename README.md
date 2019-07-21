@@ -1,2 +1,1 @@
-# gitlab-sync
-
+# git-sync
