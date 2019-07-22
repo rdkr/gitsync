@@ -28,7 +28,6 @@ func clone(path, url string) status {
 	} else if err == nil {
 
 		err = repo.Fetch(&git.FetchOptions{
-			Progress: os.Stdout,
 			Auth: &git_http.BasicAuth{
 				Username: "token",
 				Password: os.Getenv("GITLAB_TOKEN"),
