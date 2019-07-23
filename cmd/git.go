@@ -33,7 +33,10 @@ func clone(path, url string) status {
 				Password: os.Getenv("GITLAB_TOKEN"),
 			},
 		})
-		if err == nil || err == git.NoErrAlreadyUpToDate {
+		if err == git.NoErrAlreadyUpToDate {
+			return status{path, "uptodate", nil}
+		}
+		if err == nil {
 			return status{path, "fetch", nil}
 		}
 		return status{path, "fetch", err}

@@ -16,12 +16,11 @@ type status struct {
 }
 
 type ui struct {
-	isTerminal bool
-	writer     *uilive.Writer
-	goodCount  int
-	badCount   int
-	statusChan chan status
-	statuses   []status
+	isTerminal                                      bool
+	writer                                          *uilive.Writer
+	cloneCount, fetchCount, upToDateCount, errCount int
+	statusChan                                      chan status
+	statuses                                        []status
 }
 
 func newUI() ui {
@@ -35,12 +34,14 @@ func newUI() ui {
 	}
 
 	return ui{
-		isTerminal: isTerminal,
-		writer:     writer,
-		goodCount:  0,
-		badCount:   0,
-		statusChan: make(chan status),
-		statuses:   []status{},
+		isTerminal:    isTerminal,
+		writer:        writer,
+		cloneCount:    0,
+		fetchCount:    0,
+		upToDateCount: 0,
+		errCount:      0,
+		statusChan:    make(chan status),
+		statuses:      []status{},
 	}
 }
 
@@ -51,16 +52,29 @@ func (ui *ui) makeUI(root string, status status) string {
 	ui.statuses = append(ui.statuses, status)
 
 	if status.err != nil {
-		ui.badCount = ui.badCount + 1
+		ui.errCount = ui.errCount + 1
 	} else {
-		ui.goodCount = ui.goodCount + 1
+		switch status.operation {
+		case "clone":
+			ui.cloneCount = ui.cloneCount + 1
+		case "fetch":
+			ui.fetchCount = ui.fetchCount + 1
+		case "uptodate":
+			ui.upToDateCount = ui.upToDateCount + 1
+		}
 	}
 
-	if ui.goodCount > 0 {
-		sb.WriteString(fmt.Sprintf("%d \u001b[32m✔\u001b[0m", ui.goodCount))
+	if ui.cloneCount > 0 {
+		sb.WriteString(fmt.Sprintf("%d \u001b[32m⬇\u001b[0m", ui.cloneCount))
 	}
-	if ui.badCount > 0 {
-		sb.WriteString(fmt.Sprintf(" %d \u001b[31m✘\u001b[0m", ui.badCount))
+	if ui.fetchCount > 0 {
+		sb.WriteString(fmt.Sprintf("%d \u001b[32m↻\u001b[0m", ui.fetchCount))
+	}
+	if ui.upToDateCount > 0 {
+		sb.WriteString(fmt.Sprintf("%d \u001b[32m✔\u001b[0m", ui.upToDateCount))
+	}
+	if ui.errCount > 0 {
+		sb.WriteString(fmt.Sprintf(" %d \u001b[31m✘\u001b[0m", ui.errCount))
 	}
 
 	sb.WriteString("\n")
