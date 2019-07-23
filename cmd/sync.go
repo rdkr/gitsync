@@ -1,103 +1,83 @@
 package cmd
 
 import (
-	"os"
 	"sync"
-
-	"github.com/spf13/cobra"
-	gitlab "github.com/xanzy/go-gitlab"
 )
 
-// syncCmd represents the sync command
-var syncCmd = &cobra.Command{
-	Use:   "sync",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+type syncer struct {
+	groups   chan group
+	projects chan project
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	Run: func(cmd *cobra.Command, args []string) {
+	groupsWG, projectsWG, projectsSignalWG *sync.WaitGroup
+	projectSignalOnce                      *sync.Once
 
-		ui := newUI()
-		s := newSyncer(ui)
-
-		var rootGroups []gitlabGroup
-		c := gitlab.NewClient(nil, os.Getenv("GITLAB_TOKEN"))
-
-		for _, item := range cfg.Items {
-			root, _, err := c.Groups.GetGroup(item.Group)
-			if err != nil {
-				panic("bad token?")
-			}
-			rootGroups = append(rootGroups, gitlabGroup{c, root.FullPath, item.Location, root})
-		}
-
-		var wg sync.WaitGroup
-		wg.Add(3)
-
-		s.projectsWG.Add(1)       // hold this open until all groups are finished processing as we don't have a 'seed' project as with groups
-		s.projectsSignalWG.Add(1) // hold this open until at least one project has been found TODO need to handle if there are no projects :O
-
-		go func() {
-
-			for w := 0; w < 10; w++ {
-				go s.recurseGroups()
-			}
-
-			for _, group := range rootGroups {
-				s.groupsWG.Add(1)
-				s.groups <- group
-			}
-
-			s.groupsWG.Wait()
-			close(s.groups)
-
-			s.projectsWG.Done()
-			wg.Done()
-
-		}()
-
-		go func() {
-
-			s.projectsSignalWG.Wait()
-
-			for w := 0; w < 20; w++ {
-				go s.processProject()
-			}
-
-			s.projectsWG.Wait()
-			close(s.projects)
-			close(ui.statusChan)
-
-			wg.Done()
-
-		}()
-
-		go func() {
-
-			ui.run()
-			wg.Done()
-
-		}()
-
-		wg.Wait()
-	},
+	ui ui
 }
 
-func init() {
-	rootCmd.AddCommand(syncCmd)
-	// syncCmd.Flags().IntVarP(&source, "source", "s", 0, "source group to read from")
-	// syncCmd.MarkFlagRequired("source")
+func newSyncer(ui ui) syncer {
+	return syncer{
+		groups:            make(chan group),
+		projects:          make(chan project),
+		groupsWG:          new(sync.WaitGroup),
+		projectsWG:        new(sync.WaitGroup),
+		projectsSignalWG:  new(sync.WaitGroup),
+		projectSignalOnce: new(sync.Once),
+		ui:                ui,
+	}
+}
 
-	// Here you will define your flags and configuration settings.
+type group interface {
+	getGroups() []group
+	getProjects() []project
+	rootFullPath() string
+	rootLocation() string
+}
 
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// syncCmd.PersistentFlags().String("foo", "", "A help for foo")
+type project interface {
+	getPath() string
+	getURL() string
+}
 
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// syncCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+func (s syncer) recurseGroups() {
+	for {
+
+		parent, ok := <-s.groups
+		if !ok {
+			break
+		}
+
+		childGroups := parent.getGroups()
+
+		for _, child := range childGroups {
+			s.groupsWG.Add(1)
+			go func(group group) {
+				s.groups <- group
+			}(child)
+		}
+
+		childProjects := parent.getProjects()
+
+		for _, child := range childProjects {
+			s.projectsWG.Add(1)
+			s.projectSignalOnce.Do(func() { s.projectsSignalWG.Done() })
+			go func(project project) {
+				s.projects <- project
+			}(child)
+		}
+
+		s.groupsWG.Done()
+	}
+}
+
+func (s syncer) processProject() {
+	for {
+
+		project, ok := <-s.projects
+		if !ok {
+			break
+		}
+
+		s.ui.statusChan <- clone(project.getPath(), project.getURL())
+		s.projectsWG.Done()
+	}
 }

@@ -10,9 +10,10 @@ import (
 )
 
 type status struct {
-	path      string
-	operation string
-	err       error
+	path   string
+	status string
+	output string
+	err    error
 }
 
 type ui struct {
@@ -47,17 +48,16 @@ func newUI() ui {
 
 func (ui *ui) makeUI(root string, status status) string {
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("getting root group... %s\nprocessing projects... ", root))
+	sb.WriteString(fmt.Sprintf("getting parent... %s\nprocessing projects... ", root))
 
 	ui.statuses = append(ui.statuses, status)
-
 	if status.err != nil {
 		ui.errCount = ui.errCount + 1
 	} else {
-		switch status.operation {
-		case "clone":
+		switch status.status {
+		case "cloned":
 			ui.cloneCount = ui.cloneCount + 1
-		case "fetch":
+		case "fetched":
 			ui.fetchCount = ui.fetchCount + 1
 		case "uptodate":
 			ui.upToDateCount = ui.upToDateCount + 1
@@ -65,27 +65,24 @@ func (ui *ui) makeUI(root string, status status) string {
 	}
 
 	if ui.cloneCount > 0 {
-		sb.WriteString(fmt.Sprintf("%d \u001b[32m⬇\u001b[0m", ui.cloneCount))
+		sb.WriteString(fmt.Sprintf(" %d\u001b[35m🠟\u001b[0m ", ui.cloneCount))
 	}
 	if ui.fetchCount > 0 {
-		sb.WriteString(fmt.Sprintf("%d \u001b[32m↻\u001b[0m", ui.fetchCount))
+		sb.WriteString(fmt.Sprintf(" %d\u001b[36m⟳\u001b[0m ", ui.fetchCount))
 	}
 	if ui.upToDateCount > 0 {
-		sb.WriteString(fmt.Sprintf("%d \u001b[32m✔\u001b[0m", ui.upToDateCount))
+		sb.WriteString(fmt.Sprintf(" %d\u001b[32m✔\u001b[0m ", ui.upToDateCount))
 	}
 	if ui.errCount > 0 {
-		sb.WriteString(fmt.Sprintf(" %d \u001b[31m✘\u001b[0m", ui.errCount))
+		sb.WriteString(fmt.Sprintf(" %d\u001b[31m✘\u001b[0m ", ui.errCount))
 	}
 
 	sb.WriteString("\n")
 
 	for _, status := range ui.statuses {
 		if status.err != nil {
-			sb.WriteString(fmt.Sprintf(" \u001b[31m✘\u001b[0m %s: %s\n", status.path, status.err))
+			sb.WriteString(fmt.Sprintf(" \u001b[31m✘\u001b[0m  %s: %s\n", status.path, status.err))
 		}
-		// } else {
-		// 	sb.WriteString(fmt.Sprintf(" \u001b[32m✔\u001b[0m %s\n", status.path))
-		// }
 	}
 
 	return sb.String()
@@ -104,4 +101,6 @@ func (ui *ui) run() {
 			ui.writer.Flush() // it randomly prints multiple lines without this
 		}
 	}
+
+	fmt.Println(ui.statuses)
 }

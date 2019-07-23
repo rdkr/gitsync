@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bytes"
 	"os"
 
 	git "gopkg.in/src-d/go-git.v4"
@@ -9,38 +10,41 @@ import (
 
 func clone(path, url string) status {
 
+	var buf bytes.Buffer
+
 	repo, err := git.PlainOpen(path)
 	if err == git.ErrRepositoryNotExists {
 
 		_, err := git.PlainClone(path, false, &git.CloneOptions{
 			URL:      url,
-			Progress: nil,
+			Progress: &buf,
 			Auth: &git_http.BasicAuth{
 				Username: "token",
 				Password: os.Getenv("GITLAB_TOKEN"),
 			},
 		})
 		if err != nil {
-			return status{path, "clone", err}
+			return status{path, "cloned", buf.String(), err}
 		}
-		return status{path, "clone", nil}
+		return status{path, "cloned", buf.String(), nil}
 
 	} else if err == nil {
 
 		err = repo.Fetch(&git.FetchOptions{
+			Progress: &buf,
 			Auth: &git_http.BasicAuth{
 				Username: "token",
 				Password: os.Getenv("GITLAB_TOKEN"),
 			},
 		})
 		if err == git.NoErrAlreadyUpToDate {
-			return status{path, "uptodate", nil}
+			return status{path, "uptodate", buf.String(), nil}
 		}
 		if err == nil {
-			return status{path, "fetch", nil}
+			return status{path, "fetched", buf.String(), nil}
 		}
-		return status{path, "fetch", err}
+		return status{path, "fetched", buf.String(), err}
 
 	}
-	return status{path, "open", err}
+	return status{path, "", buf.String(), err}
 }
