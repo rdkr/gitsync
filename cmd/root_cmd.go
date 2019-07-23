@@ -10,15 +10,6 @@ import (
 	"github.com/spf13/viper"
 )
 
-type configItem struct {
-	Group    int    `yaml:"group"`
-	Location string `yaml:"location"`
-}
-
-type config struct {
-	Items []configItem `yaml:"items"`
-}
-
 var cfgFile string
 var cfg config
 

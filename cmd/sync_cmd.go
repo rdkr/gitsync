@@ -23,15 +23,17 @@ to quickly create a Cobra application.`,
 		ui := newUI()
 		s := newSyncer(ui)
 
-		var rootGroups []gitlabGroup
-		c := gitlab.NewClient(nil, os.Getenv("GITLAB_TOKEN"))
+		token := os.Getenv("GITLAB_TOKEN")
+		c := gitlab.NewClient(nil, token)
 
-		for _, item := range cfg.Items {
+		var rootGroups []gitlabGroup
+
+		for _, item := range cfg.Gitlab.Groups {
 			root, _, err := c.Groups.GetGroup(item.Group)
 			if err != nil {
 				panic("bad token?")
 			}
-			rootGroups = append(rootGroups, gitlabGroup{c, root.FullPath, item.Location, root})
+			rootGroups = append(rootGroups, gitlabGroup{c, token, root.FullPath, item.Location, root})
 		}
 
 		var wg sync.WaitGroup
@@ -60,6 +62,27 @@ to quickly create a Cobra application.`,
 		}()
 
 		go func() {
+
+			for _, p := range cfg.Gitlab.Projects {
+				s.projectsWG.Add(1)
+				s.projectSignalOnce.Do(func() { s.projectsSignalWG.Done() })
+
+				if p.Token == "" {
+					p.Token = token
+				}
+				go func(project project) {
+					s.projects <- project
+				}(p)
+			}
+
+			for _, p := range cfg.Anon.Projects {
+				s.projectsWG.Add(1)
+				s.projectSignalOnce.Do(func() { s.projectsSignalWG.Done() })
+
+				go func(project project) {
+					s.projects <- project
+				}(p)
+			}
 
 			s.projectsSignalWG.Wait()
 

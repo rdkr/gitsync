@@ -32,7 +32,6 @@ func newUI() ui {
 	writer := uilive.New() // TODO this is created even though its not necessarily used
 	if isTerminal {
 		writer.Start()
-		fmt.Fprint(writer.Newline(), "syncing: ")
 	}
 
 	return ui{
@@ -69,10 +68,10 @@ func (ui *ui) makeUI(status status) string {
 	}
 
 	if ui.cloneCount > 0 {
-		sb.WriteString(fmt.Sprintf(" %d\u001b[35m🠟\u001b[0m ", ui.cloneCount))
+		sb.WriteString(fmt.Sprintf(" %d\u001b[36m🠟\u001b[0m ", ui.cloneCount))
 	}
 	if ui.fetchCount > 0 {
-		sb.WriteString(fmt.Sprintf(" %d\u001b[36m⟳\u001b[0m ", ui.fetchCount))
+		sb.WriteString(fmt.Sprintf(" %d\u001b[33m⟳\u001b[0m ", ui.fetchCount))
 	}
 	if ui.upToDateCount > 0 {
 		sb.WriteString(fmt.Sprintf(" %d\u001b[32m✔\u001b[0m ", ui.upToDateCount))

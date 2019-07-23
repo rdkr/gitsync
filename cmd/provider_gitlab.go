@@ -9,6 +9,7 @@ import (
 
 type gitlabGroup struct {
 	client   *gitlab.Client
+	token    string
 	fullPath string
 	location string
 	*gitlab.Group
@@ -16,6 +17,7 @@ type gitlabGroup struct {
 
 type gitlabProject struct {
 	client *gitlab.Client
+	token  string
 	group  group
 	*gitlab.Project
 }
@@ -31,7 +33,7 @@ func (g gitlabGroup) getGroups() []group {
 	}
 
 	for _, group := range groups {
-		result = append(result, gitlabGroup{g.client, g.rootFullPath(), g.rootLocation(), group})
+		result = append(result, gitlabGroup{g.client, g.token, g.rootFullPath(), g.rootLocation(), group})
 	}
 
 	return result
@@ -48,7 +50,7 @@ func (g gitlabGroup) getProjects() []project {
 	}
 
 	for _, project := range projects {
-		result = append(result, gitlabProject{g.client, g, project})
+		result = append(result, gitlabProject{g.client, g.token, g, project})
 	}
 
 	return result
@@ -71,4 +73,8 @@ func (p gitlabProject) getPath() string {
 
 func (p gitlabProject) getURL() string {
 	return p.HTTPURLToRepo
+}
+
+func (p gitlabProject) getToken() string {
+	return p.token
 }

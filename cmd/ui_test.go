@@ -8,8 +8,9 @@ import (
 
 func TestUI(t *testing.T) {
 	ui := newUI()
-	ui.makeUI(status{"test", "error", "", errors.New("err")})
-	ui.makeUI(status{"test", "fetched", "", nil})
-	ui.makeUI(status{"test", "cloned", "", nil})
-	fmt.Println(ui.makeUI(status{"", "uptodate", "", nil}))
+	ui.makeUI(status{"testpath1", "error", "", errors.New("err")})
+	ui.makeUI(status{"testpath2", "fetched", "", nil})
+	ui.makeUI(status{"testpath3", "cloned", "", nil})
+	ui.makeUI(status{"testpath4", "uptodate", "", nil})
+	fmt.Println(ui.makeUI(status{"done", "", "", nil}))
 }

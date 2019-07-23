@@ -36,6 +36,7 @@ type group interface {
 type project interface {
 	getPath() string
 	getURL() string
+	getToken() string
 }
 
 func (s syncer) recurseGroups() {
@@ -79,7 +80,8 @@ func (s syncer) processProject() {
 			break
 		}
 
-		s.ui.statusChan <- clone(project.getPath(), project.getURL())
+		s.ui.statusChan <- status{project.getPath(), "", "", nil}
+		s.ui.statusChan <- clone(project.getPath(), project.getURL(), project.getToken())
 		s.projectsWG.Done()
 	}
 }

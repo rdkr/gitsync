@@ -4,14 +4,20 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"os"
 
 	git "gopkg.in/src-d/go-git.v4"
 	git_http "gopkg.in/src-d/go-git.v4/plumbing/transport/http"
 )
 
-func clone(path, url string) status {
+func clone(path, url, token string) status {
 
+	var auth *git_http.BasicAuth
+	if token != "" {
+		auth = &git_http.BasicAuth{
+			Username: "token",
+			Password: token,
+		}
+	}
 	var buf bytes.Buffer
 
 	repo, err := git.PlainOpen(path)
@@ -20,10 +26,7 @@ func clone(path, url string) status {
 		_, err := git.PlainClone(path, false, &git.CloneOptions{
 			URL:      url,
 			Progress: &buf,
-			Auth: &git_http.BasicAuth{
-				Username: "token",
-				Password: os.Getenv("GITLAB_TOKEN"),
-			},
+			Auth:     auth,
 		})
 		if err != nil {
 			return status{path, "", buf.String(), fmt.Errorf("unable to clone repo: %v", err)}
@@ -43,10 +46,7 @@ func clone(path, url string) status {
 
 		err = repo.Fetch(&git.FetchOptions{
 			Progress: &buf,
-			Auth: &git_http.BasicAuth{
-				Username: "token",
-				Password: os.Getenv("GITLAB_TOKEN"),
-			},
+			Auth:     auth,
 		})
 		if err == git.NoErrAlreadyUpToDate {
 			return status{path, "", buf.String(), errors.New("not on master branch but fetched")}
@@ -64,10 +64,7 @@ func clone(path, url string) status {
 
 	err = worktree.Pull(&git.PullOptions{
 		Progress: &buf,
-		Auth: &git_http.BasicAuth{
-			Username: "token",
-			Password: os.Getenv("GITLAB_TOKEN"),
-		},
+		Auth:     auth,
 	})
 	if err == git.NoErrAlreadyUpToDate {
 		return status{path, "uptodate", buf.String(), nil}
