@@ -46,6 +46,8 @@ func (s syncer) recurseGroups() {
 			break
 		}
 
+		s.ui.currentParent = parent.rootFullPath()
+
 		childGroups := parent.getGroups()
 
 		for _, child := range childGroups {

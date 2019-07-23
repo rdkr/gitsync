@@ -22,6 +22,7 @@ type ui struct {
 	cloneCount, fetchCount, upToDateCount, errCount int
 	statusChan                                      chan status
 	statuses                                        []status
+	currentParent                                   string
 }
 
 func newUI() ui {
@@ -31,7 +32,7 @@ func newUI() ui {
 	writer := uilive.New() // TODO this is created even though its not necessarily used
 	if isTerminal {
 		writer.Start()
-		fmt.Fprint(writer.Newline(), "getting root group... ")
+		fmt.Fprint(writer.Newline(), "syncing... ")
 	}
 
 	return ui{
@@ -43,12 +44,13 @@ func newUI() ui {
 		errCount:      0,
 		statusChan:    make(chan status),
 		statuses:      []status{},
+		currentParent: "",
 	}
 }
 
-func (ui *ui) makeUI(root string, status status) string {
+func (ui *ui) makeUI(status status) string {
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("getting parent... %s\nprocessing projects... ", root))
+	sb.WriteString(fmt.Sprintf("syncing... "))
 
 	ui.statuses = append(ui.statuses, status)
 	if status.err != nil {
@@ -97,10 +99,10 @@ func (ui *ui) run() {
 		}
 
 		if ui.isTerminal {
-			fmt.Fprint(ui.writer.Newline(), ui.makeUI("placeholder", status))
+			fmt.Fprint(ui.writer.Newline(), ui.makeUI(status))
 			ui.writer.Flush() // it randomly prints multiple lines without this
 		}
 	}
 
-	fmt.Println(ui.statuses)
+	// fmt.Println(ui.statuses)
 }
