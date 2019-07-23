@@ -1,12 +1,12 @@
 package cmd
 
 import (
+	"os"
 	"sync"
 
 	"github.com/spf13/cobra"
+	gitlab "github.com/xanzy/go-gitlab"
 )
-
-var source int
 
 // syncCmd represents the sync command
 var syncCmd = &cobra.Command{
@@ -19,44 +19,56 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		ui := newUI()
-		g := newGitlabProvider(source)
 
-		g.prefix = "gitlab"
+		ui := newUI()
+		s := newSyncer(ui)
+
+		var rootGroups []gitlabGroup
+		c := gitlab.NewClient(nil, os.Getenv("GITLAB_TOKEN"))
+
+		for _, item := range cfg.Items {
+			root, _, err := c.Groups.GetGroup(item.Group)
+			if err != nil {
+				panic("bad token?")
+			}
+			rootGroups = append(rootGroups, gitlabGroup{c, root.FullPath, item.Location, root})
+		}
 
 		var wg sync.WaitGroup
 		wg.Add(3)
 
-		g.projectsWG.Add(1)       // hold this open until all groups are finished processing as we don't have a 'seed' project as with groups
-		g.projectsSignalWG.Add(1) // hold this open until at least one project has been found TODO need to handle if there are no projects :O
+		s.projectsWG.Add(1)       // hold this open until all groups are finished processing as we don't have a 'seed' project as with groups
+		s.projectsSignalWG.Add(1) // hold this open until at least one project has been found TODO need to handle if there are no projects :O
 
 		go func() {
 
 			for w := 0; w < 10; w++ {
-				go g.recurseGroups()
+				go s.recurseGroups()
 			}
 
-			g.groupsWG.Add(1)
-			g.groups <- g.root.ID
+			for _, group := range rootGroups {
+				s.groupsWG.Add(1)
+				s.groups <- group
+			}
 
-			g.groupsWG.Wait()
-			close(g.groups)
+			s.groupsWG.Wait()
+			close(s.groups)
 
-			g.projectsWG.Done()
+			s.projectsWG.Done()
 			wg.Done()
 
 		}()
 
 		go func() {
 
-			g.projectsSignalWG.Wait()
+			s.projectsSignalWG.Wait()
 
 			for w := 0; w < 20; w++ {
-				go g.processProject(ui)
+				go s.processProject()
 			}
 
-			g.projectsWG.Wait()
-			close(g.projects)
+			s.projectsWG.Wait()
+			close(s.projects)
 			close(ui.statusChan)
 
 			wg.Done()
@@ -65,7 +77,7 @@ to quickly create a Cobra application.`,
 
 		go func() {
 
-			ui.run(g)
+			ui.run()
 			wg.Done()
 
 		}()
@@ -76,8 +88,9 @@ to quickly create a Cobra application.`,
 
 func init() {
 	rootCmd.AddCommand(syncCmd)
-	syncCmd.Flags().IntVarP(&source, "source", "s", 0, "source group to read from")
-	syncCmd.MarkFlagRequired("source")
+	// syncCmd.Flags().IntVarP(&source, "source", "s", 0, "source group to read from")
+	// syncCmd.MarkFlagRequired("source")
+
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command

@@ -1,4 +1,4 @@
-module git-sync
+module gitsync
 
 go 1.12
 

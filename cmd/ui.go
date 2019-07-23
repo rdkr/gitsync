@@ -77,7 +77,7 @@ func (ui *ui) makeUI(root string, status status) string {
 	return sb.String()
 }
 
-func (ui *ui) run(g gitlabProvider) {
+func (ui *ui) run() {
 	for {
 
 		status, ok := <-ui.statusChan
@@ -86,7 +86,7 @@ func (ui *ui) run(g gitlabProvider) {
 		}
 
 		if ui.isTerminal {
-			fmt.Fprint(ui.writer.Newline(), ui.makeUI(g.root.FullPath, status))
+			fmt.Fprint(ui.writer.Newline(), ui.makeUI("placeholder", status))
 			ui.writer.Flush() // it randomly prints multiple lines without this
 		}
 	}

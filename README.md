@@ -1,1 +1,1 @@
-# git-sync
+# gitsync
