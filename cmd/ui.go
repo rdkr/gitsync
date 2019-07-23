@@ -32,7 +32,7 @@ func newUI() ui {
 	writer := uilive.New() // TODO this is created even though its not necessarily used
 	if isTerminal {
 		writer.Start()
-		fmt.Fprint(writer.Newline(), "syncing... ")
+		fmt.Fprint(writer.Newline(), "syncing: ")
 	}
 
 	return ui{
@@ -50,19 +50,21 @@ func newUI() ui {
 
 func (ui *ui) makeUI(status status) string {
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("syncing... "))
+	sb.WriteString(fmt.Sprintf("syncing: %s\nresult:", status.path))
 
-	ui.statuses = append(ui.statuses, status)
-	if status.err != nil {
-		ui.errCount = ui.errCount + 1
-	} else {
-		switch status.status {
-		case "cloned":
-			ui.cloneCount = ui.cloneCount + 1
-		case "fetched":
-			ui.fetchCount = ui.fetchCount + 1
-		case "uptodate":
-			ui.upToDateCount = ui.upToDateCount + 1
+	if status.path != "" {
+		ui.statuses = append(ui.statuses, status)
+		if status.err != nil {
+			ui.errCount = ui.errCount + 1
+		} else {
+			switch status.status {
+			case "cloned":
+				ui.cloneCount = ui.cloneCount + 1
+			case "fetched":
+				ui.fetchCount = ui.fetchCount + 1
+			case "uptodate":
+				ui.upToDateCount = ui.upToDateCount + 1
+			}
 		}
 	}
 
@@ -104,5 +106,9 @@ func (ui *ui) run() {
 		}
 	}
 
+	if ui.isTerminal {
+		fmt.Fprint(ui.writer.Newline(), ui.makeUI(status{"done", "", "", nil}))
+		ui.writer.Flush() // it randomly prints multiple lines without this
+	}
 	// fmt.Println(ui.statuses)
 }
