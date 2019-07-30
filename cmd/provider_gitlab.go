@@ -7,7 +7,7 @@ import (
 	gitlab "github.com/xanzy/go-gitlab"
 )
 
-type gitlabGroup struct {
+type gitlabGroupProvider struct {
 	client   *gitlab.Client
 	token    string
 	fullPath string
@@ -15,14 +15,7 @@ type gitlabGroup struct {
 	*gitlab.Group
 }
 
-type gitlabProject struct {
-	client *gitlab.Client
-	token  string
-	group  group
-	*gitlab.Project
-}
-
-func (g gitlabGroup) getGroups() []group {
+func (g gitlabGroupProvider) getGroups() []group {
 	var result []group
 
 	groups, _, err := g.client.Groups.ListSubgroups(g.ID, &gitlab.ListSubgroupsOptions{
@@ -33,13 +26,13 @@ func (g gitlabGroup) getGroups() []group {
 	}
 
 	for _, group := range groups {
-		result = append(result, gitlabGroup{g.client, g.token, g.rootFullPath(), g.rootLocation(), group})
+		result = append(result, gitlabGroupProvider{g.client, g.token, g.rootFullPath(), g.rootLocation(), group})
 	}
 
 	return result
 }
 
-func (g gitlabGroup) getProjects() []project {
+func (g gitlabGroupProvider) getProjects() []project {
 	var result []project
 
 	projects, _, err := g.client.Groups.ListGroupProjects(g.ID, &gitlab.ListGroupProjectsOptions{
@@ -49,32 +42,22 @@ func (g gitlabGroup) getProjects() []project {
 		panic(err)
 	}
 
-	for _, project := range projects {
-		result = append(result, gitlabProject{g.client, g.token, g, project})
+	for _, p := range projects {
+
+		path := strings.ReplaceAll(p.PathWithNamespace, g.rootFullPath(), "")
+		path = strings.TrimLeft(path, "/")
+		path = fmt.Sprintf("%s/%s", g.rootLocation(), path)
+
+		result = append(result, project{p.HTTPURLToRepo, path, g.token})
 	}
 
 	return result
 }
 
-func (g gitlabGroup) rootFullPath() string {
+func (g gitlabGroupProvider) rootFullPath() string {
 	return g.fullPath
 }
 
-func (g gitlabGroup) rootLocation() string {
+func (g gitlabGroupProvider) rootLocation() string {
 	return g.location
-}
-
-func (p gitlabProject) getPath() string {
-	path := strings.ReplaceAll(p.PathWithNamespace, p.group.rootFullPath(), "")
-	path = strings.TrimLeft(path, "/")
-	path = fmt.Sprintf("%s/%s", p.group.rootLocation(), path)
-	return path
-}
-
-func (p gitlabProject) getURL() string {
-	return p.HTTPURLToRepo
-}
-
-func (p gitlabProject) getToken() string {
-	return p.token
 }

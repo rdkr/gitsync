@@ -26,14 +26,14 @@ to quickly create a Cobra application.`,
 		token := os.Getenv("GITLAB_TOKEN")
 		c := gitlab.NewClient(nil, token)
 
-		var rootGroups []gitlabGroup
+		var rootGroups []gitlabGroupProvider
 
 		for _, item := range cfg.Gitlab.Groups {
 			root, _, err := c.Groups.GetGroup(item.Group)
 			if err != nil {
 				panic("bad token?")
 			}
-			rootGroups = append(rootGroups, gitlabGroup{c, token, root.FullPath, item.Location, root})
+			rootGroups = append(rootGroups, gitlabGroupProvider{c, token, root.FullPath, item.Location, root})
 		}
 
 		var wg sync.WaitGroup

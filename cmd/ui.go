@@ -49,7 +49,7 @@ func newUI() ui {
 
 func (ui *ui) makeUI(status status) string {
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("syncing: %s\nresult:", status.path))
+	sb.WriteString("result:")
 
 	if status.path != "" {
 		ui.statuses = append(ui.statuses, status)
@@ -104,10 +104,4 @@ func (ui *ui) run() {
 			ui.writer.Flush() // it randomly prints multiple lines without this
 		}
 	}
-
-	if ui.isTerminal {
-		fmt.Fprint(ui.writer.Newline(), ui.makeUI(status{"done", "", "", nil}))
-		ui.writer.Flush() // it randomly prints multiple lines without this
-	}
-	// fmt.Println(ui.statuses)
 }

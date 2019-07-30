@@ -26,19 +26,6 @@ func newSyncer(ui ui) syncer {
 	}
 }
 
-type group interface {
-	getGroups() []group
-	getProjects() []project
-	rootFullPath() string
-	rootLocation() string
-}
-
-type project interface {
-	getPath() string
-	getURL() string
-	getToken() string
-}
-
 func (s syncer) recurseGroups() {
 	for {
 
@@ -80,8 +67,8 @@ func (s syncer) processProject() {
 			break
 		}
 
-		s.ui.statusChan <- status{project.getPath(), "", "", nil}
-		s.ui.statusChan <- clone(project.getPath(), project.getURL(), project.getToken())
+		s.ui.statusChan <- status{project.Location, "", "", nil}
+		s.ui.statusChan <- project.clone()
 		s.projectsWG.Done()
 	}
 }
