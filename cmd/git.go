@@ -51,22 +51,23 @@ func clone(path, url, token string) status {
 		if err == git.NoErrAlreadyUpToDate {
 			return status{path, "", buf.String(), errors.New("not on master branch but fetched")}
 		}
-		if err == nil {
-			return status{path, "", buf.String(), fmt.Errorf("not on master branch and: %v", err)}
-		}
+		return status{path, "", buf.String(), fmt.Errorf("not on master branch and: %v", err)}
+
 	}
 
 	// Get the working directory for the repository
 	worktree, err := repo.Worktree()
 	if err != nil {
-		return status{path, "", buf.String(), err}
+		return status{path, "", buf.String(), fmt.Errorf("unable to get worktree: %v", err)}
 	}
 
 	err = worktree.Pull(&git.PullOptions{
 		Progress: &buf,
 		Auth:     auth,
 	})
-	if err == git.NoErrAlreadyUpToDate {
+	if err == nil {
+		return status{path, "fetched", buf.String(), nil}
+	} else if err == git.NoErrAlreadyUpToDate {
 		return status{path, "uptodate", buf.String(), nil}
 	}
 	return status{path, "", buf.String(), fmt.Errorf("unable to pull master: %v", err)}

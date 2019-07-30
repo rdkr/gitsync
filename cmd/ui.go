@@ -68,23 +68,23 @@ func (ui *ui) makeUI(status status) string {
 	}
 
 	if ui.cloneCount > 0 {
-		sb.WriteString(fmt.Sprintf(" %d\u001b[36m🠟\u001b[0m ", ui.cloneCount))
+		sb.WriteString(fmt.Sprintf(" %d \u001b[36m+\u001b[0m  ", ui.cloneCount))
 	}
 	if ui.fetchCount > 0 {
-		sb.WriteString(fmt.Sprintf(" %d\u001b[33m⟳\u001b[0m ", ui.fetchCount))
+		sb.WriteString(fmt.Sprintf(" %d \u001b[33m⟳\u001b[0m  ", ui.fetchCount))
 	}
 	if ui.upToDateCount > 0 {
-		sb.WriteString(fmt.Sprintf(" %d\u001b[32m✔\u001b[0m ", ui.upToDateCount))
+		sb.WriteString(fmt.Sprintf(" %d \u001b[32m✔\u001b[0m  ", ui.upToDateCount))
 	}
 	if ui.errCount > 0 {
-		sb.WriteString(fmt.Sprintf(" %d\u001b[31m✘\u001b[0m ", ui.errCount))
+		sb.WriteString(fmt.Sprintf(" %d \u001b[31m✘\u001b[0m  ", ui.errCount))
 	}
 
 	sb.WriteString("\n")
 
 	for _, status := range ui.statuses {
 		if status.err != nil {
-			sb.WriteString(fmt.Sprintf(" \u001b[31m✘\u001b[0m  %s: %s\n", status.path, status.err))
+			sb.WriteString(fmt.Sprintf(" \u001b[31m✘\u001b[0m  %s - %s\n", status.path, status.err))
 		}
 	}
 
