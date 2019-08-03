@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/spf13/cobra"
-
 	homedir "github.com/mitchellh/go-homedir"
+	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
@@ -18,8 +17,12 @@ var rootCmd = &cobra.Command{
 	Use:   "gitsync",
 	Short: "A tool to keep many git repos in sync with their remote origins",
 	Long: `gitsync is a tool to help keep many local instances of git repos in sync
-  with their remote origins. It supports individual repos and git service
-  provider groups.`,
+with their remote origins. It supports individual repos and git
+service provider groups accessed over HTTPS either anonymously or
+with an auth token.`,
+	Run: func(cmd *cobra.Command, args []string) {
+		syncronise()
+	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

@@ -8,10 +8,17 @@ type config struct {
 type gitlabConfig struct {
 	Groups   []gitlabGroup `yaml:"groups"`
 	Projects []project     `yaml:"projects"`
+	Token    string        `yaml:"token"`
 }
 
 type anonConfig struct {
 	Projects []project `yaml:"projects"`
+	
+	
+	
+	
+	
+	
 }
 
 type gitlabGroup struct {
