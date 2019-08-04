@@ -87,28 +87,3 @@ func (p project) clone() status {
 	return status{p.Location, "", buf.String(), fmt.Errorf("unable to pull master: %v", err)}
 
 }
-
-// func processRepo(p.Location, p.URL string) error {
-
-// 	repoExists, err := repoExist(p.Location)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	if repoExists {
-// 		return clone(p.Location, repo)
-// 	}
-// 	if repoOnMasterBranch(repo) {
-// 		return pull()
-// 	}
-// 	fetch()
-// }
-
-// func repoExists(p.Location) (bool, status) {
-// 	repo, err := git.PlainOpen(p.Location)
-// 	if err == git.ErrRepositoryNotExists {
-// 		return repo, nil
-// 	} else if err != nil {
-
-// 	}
-// }

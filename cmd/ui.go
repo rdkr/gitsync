@@ -17,7 +17,7 @@ type status struct {
 }
 
 type ui struct {
-	isTerminal                                      bool
+	prettyPrint                                     bool
 	writer                                          *uilive.Writer
 	cloneCount, fetchCount, upToDateCount, errCount int
 	statusChan                                      chan status
@@ -25,17 +25,17 @@ type ui struct {
 	currentParent                                   string
 }
 
-func newUI() ui {
+func newUI(verbose bool) ui {
 
-	isTerminal := terminal.IsTerminal(int(os.Stdout.Fd()))
+	prettyPrint := !verbose && terminal.IsTerminal(int(os.Stdout.Fd()))
 
 	writer := uilive.New() // TODO this is created even though its not necessarily used
-	if isTerminal {
+	if !verbose {
 		writer.Start()
 	}
 
 	return ui{
-		isTerminal:    isTerminal,
+		prettyPrint:   prettyPrint,
 		writer:        writer,
 		cloneCount:    0,
 		fetchCount:    0,
@@ -99,9 +99,11 @@ func (ui *ui) run() {
 			break
 		}
 
-		if ui.isTerminal {
+		if ui.prettyPrint {
 			fmt.Fprint(ui.writer.Newline(), ui.makeUI(status))
 			ui.writer.Flush() // it randomly prints multiple lines without this
+		} else {
+			fmt.Println(status)
 		}
 	}
 }

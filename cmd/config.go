@@ -13,12 +13,6 @@ type gitlabConfig struct {
 
 type anonConfig struct {
 	Projects []project `yaml:"projects"`
-	
-	
-	
-	
-	
-	
 }
 
 type gitlabGroup struct {

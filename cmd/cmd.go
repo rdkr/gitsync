@@ -10,16 +10,41 @@ import (
 )
 
 var cfgFile string
+var verbose bool
 var cfg config
+
+const usage = `gitsync is a tool to keep local git repos in sync with remote git servers.
+
+It supports individual repos and git service provider groups accessed over
+HTTPS and authenticated either anonymously or with a token.
+
+Git service providers:
+ - GitLab (set GITLAB_TOKEN)
+
+A .yaml config file is expected, and will be found from:
+ - $HOME/.gitsync.yaml
+ - $PWD/.gitsync.yaml
+ - as specified using the --config/-c flag
+
+The format of the config file is as follows:
+
+gitlab:
+  groups:
+  - group: <group-id>
+    location: <local path to sync to>
+  projects:
+  - url: https://...
+    location: <local path to sync to>
+anon:
+  projects:
+  - url: https://...
+	location: <local path to sync to>`
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "gitsync",
 	Short: "A tool to keep many git repos in sync with their remote origins",
-	Long: `gitsync is a tool to help keep many local instances of git repos in sync
-with their remote origins. It supports individual repos and git
-service provider groups accessed over HTTPS either anonymously or
-with an auth token.`,
+	Long:  usage,
 	Run: func(cmd *cobra.Command, args []string) {
 		syncronise()
 	},
@@ -36,25 +61,15 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
-
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.gitsync.yaml)")
-	// rootCmd.PersistentFlags().StringVar(&author, "author", "YOUR NAME", "Author name for copyright attribution")
-	// viper.BindPFlag("author", rootCmd.PersistentFlags().Lookup("author"))
-
+	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file (default is $HOME/.gitsync.yaml)")
+	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "verbose output")
 }
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
 
 	if cfgFile != "" {
-
-		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)
-
 	} else {
 
 		// Find home directory.
@@ -70,8 +85,6 @@ func initConfig() {
 
 	}
 
-	viper.AutomaticEnv() // read in environment variables that match
-
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
 		// fmt.Println("Using config file:", viper.ConfigFileUsed())
@@ -83,5 +96,4 @@ func initConfig() {
 	if err != nil {
 		fmt.Println(err)
 	}
-
 }

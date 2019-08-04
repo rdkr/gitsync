@@ -77,7 +77,7 @@ func (s syncer) processProject() {
 }
 
 func syncronise() {
-	ui := newUI()
+	ui := newUI(verbose)
 	s := newSyncer(ui)
 
 	token := os.Getenv("GITLAB_TOKEN")

@@ -7,7 +7,7 @@ import (
 )
 
 func TestUI(t *testing.T) {
-	ui := newUI()
+	ui := newUI(false)
 	ui.makeUI(status{"testpath1", "error", "", errors.New("err")})
 	ui.makeUI(status{"testpath2", "fetched", "", nil})
 	ui.makeUI(status{"testpath3", "cloned", "", nil})
