@@ -10,5 +10,6 @@ require (
 	github.com/spf13/viper v1.3.2
 	github.com/xanzy/go-gitlab v0.18.0
 	golang.org/x/crypto v0.0.0-20190422183909-d864b10871cd
+	golang.org/x/sync v0.0.0-20190423024810-112230192c58 // indirect
 	gopkg.in/src-d/go-git.v4 v4.12.0
 )

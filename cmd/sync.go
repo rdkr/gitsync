@@ -7,6 +7,13 @@ import (
 	gitlab "github.com/xanzy/go-gitlab"
 )
 
+type group interface {
+	getGroups() []group
+	getProjects() []project
+	rootFullPath() string
+	rootLocation() string
+}
+
 type syncer struct {
 	groups   chan group
 	projects chan project
@@ -71,7 +78,7 @@ func (s syncer) processProject() {
 		}
 
 		s.ui.statusChan <- status{project.Location, "", "", nil}
-		s.ui.statusChan <- project.clone()
+		s.ui.statusChan <- project.Clone()
 		s.projectsWG.Done()
 	}
 }

@@ -6,6 +6,7 @@ import (
 	"testing"
 )
 
+// not really a test, but useful for checking the UI output formater
 func TestUI(t *testing.T) {
 	ui := newUI(false)
 	ui.makeUI(status{"testpath1", "error", "", errors.New("err")})
