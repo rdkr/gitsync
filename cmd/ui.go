@@ -9,9 +9,9 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 )
 
-type status struct {
+type Status struct {
 	path   string
-	status string
+	Status string
 	output string
 	err    error
 }
@@ -20,8 +20,8 @@ type ui struct {
 	prettyPrint                                     bool
 	writer                                          *uilive.Writer
 	cloneCount, fetchCount, upToDateCount, errCount int
-	statusChan                                      chan status
-	statuses                                        []status
+	statusChan                                      chan Status
+	statuses                                        []Status
 	currentParent                                   string
 }
 
@@ -41,13 +41,13 @@ func newUI(verbose bool) ui {
 		fetchCount:    0,
 		upToDateCount: 0,
 		errCount:      0,
-		statusChan:    make(chan status),
-		statuses:      []status{},
+		statusChan:    make(chan Status),
+		statuses:      []Status{},
 		currentParent: "",
 	}
 }
 
-func (ui *ui) makeUI(status status) string {
+func (ui *ui) makeUI(status Status) string {
 	var sb strings.Builder
 	sb.WriteString("result:")
 
@@ -56,7 +56,7 @@ func (ui *ui) makeUI(status status) string {
 		if status.err != nil {
 			ui.errCount = ui.errCount + 1
 		} else {
-			switch status.status {
+			switch status.Status {
 			case "cloned":
 				ui.cloneCount = ui.cloneCount + 1
 			case "fetched":
