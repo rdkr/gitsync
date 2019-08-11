@@ -3,6 +3,7 @@ module gitsync
 go 1.12
 
 require (
+	github.com/go-test/deep v1.0.2
 	github.com/golang/mock v1.3.1
 	github.com/gosuri/uilive v0.0.3
 	github.com/mattn/go-isatty v0.0.8 // indirect

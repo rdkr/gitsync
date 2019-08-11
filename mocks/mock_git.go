@@ -6,7 +6,6 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
-	cmd "gitsync/cmd"
 	go_git_v4 "gopkg.in/src-d/go-git.v4"
 	reflect "reflect"
 )
@@ -35,11 +34,12 @@ func (m *MockGit) EXPECT() *MockGitMockRecorder {
 }
 
 // Fetch mocks base method
-func (m *MockGit) Fetch(arg0 *go_git_v4.Repository) cmd.Status {
+func (m *MockGit) Fetch(arg0 *go_git_v4.Repository) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Fetch", arg0)
-	ret0, _ := ret[0].(cmd.Status)
-	return ret0
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // Fetch indicates an expected call of Fetch
@@ -49,11 +49,12 @@ func (mr *MockGitMockRecorder) Fetch(arg0 interface{}) *gomock.Call {
 }
 
 // PlainClone mocks base method
-func (m *MockGit) PlainClone() cmd.Status {
+func (m *MockGit) PlainClone() (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PlainClone")
-	ret0, _ := ret[0].(cmd.Status)
-	return ret0
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // PlainClone indicates an expected call of PlainClone
@@ -78,11 +79,12 @@ func (mr *MockGitMockRecorder) PlainOpen() *gomock.Call {
 }
 
 // Pull mocks base method
-func (m *MockGit) Pull(arg0 *go_git_v4.Worktree) cmd.Status {
+func (m *MockGit) Pull(arg0 *go_git_v4.Worktree) (string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Pull", arg0)
-	ret0, _ := ret[0].(cmd.Status)
-	return ret0
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // Pull indicates an expected call of Pull

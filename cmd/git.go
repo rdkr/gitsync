@@ -4,25 +4,24 @@ package cmd
 
 import (
 	"bytes"
-	"errors"
-	"fmt"
 
-	git "gopkg.in/src-d/go-git.v4"
+	"gopkg.in/src-d/go-git.v4"
 	git_http "gopkg.in/src-d/go-git.v4/plumbing/transport/http"
 )
 
+// Git interface for network operations
 type Git interface {
 	PlainOpen() (*git.Repository, error)
-	PlainClone() Status
-	Fetch(*git.Repository) Status
-	Pull(*git.Worktree) Status
+	PlainClone() (string, error)
+	Fetch(*git.Repository) (string, error)
+	Pull(*git.Worktree) (string, error)
 }
 
 func (p project) PlainOpen() (*git.Repository, error) {
 	return git.PlainOpen(p.Location)
 }
 
-func (p project) PlainClone() Status {
+func (p project) PlainClone() (string, error) {
 
 	var auth *git_http.BasicAuth
 	if p.Token != "" {
@@ -39,14 +38,11 @@ func (p project) PlainClone() Status {
 		Progress: &buf,
 		Auth:     auth,
 	})
-	if err != nil {
-		return Status{p.Location, "", buf.String(), fmt.Errorf("unable to clone repo: %v", err)}
-	}
-	return Status{p.Location, "cloned", buf.String(), nil}
 
+	return buf.String(), err
 }
 
-func (p project) Fetch(repo *git.Repository) Status {
+func (p project) Fetch(repo *git.Repository) (string, error) {
 
 	var auth *git_http.BasicAuth
 	if p.Token != "" {
@@ -62,14 +58,11 @@ func (p project) Fetch(repo *git.Repository) Status {
 		Progress: &buf,
 		Auth:     auth,
 	})
-	if err == git.NoErrAlreadyUpToDate {
-		return Status{p.Location, "", buf.String(), errors.New("not on master branch but fetched")}
-	}
-	return Status{p.Location, "", buf.String(), fmt.Errorf("not on master branch and: %v", err)}
 
+	return buf.String(), err
 }
 
-func (p project) Pull(worktree *git.Worktree) Status {
+func (p project) Pull(worktree *git.Worktree) (string, error) {
 
 	var auth *git_http.BasicAuth
 	if p.Token != "" {
@@ -85,40 +78,6 @@ func (p project) Pull(worktree *git.Worktree) Status {
 		Progress: &buf,
 		Auth:     auth,
 	})
-	if err == nil {
-		return Status{p.Location, "fetched", buf.String(), nil}
-	} else if err == git.NoErrAlreadyUpToDate {
-		return Status{p.Location, "uptodate", buf.String(), nil}
-	}
-	return Status{p.Location, "", buf.String(), fmt.Errorf("unable to pull master: %v", err)}
 
-}
-
-func Sync(p Git, location string) Status {
-
-	repo, err := p.PlainOpen()
-
-	if err == git.ErrRepositoryNotExists {
-		return p.PlainClone()
-	} else if err != nil {
-		return Status{location, "", "", fmt.Errorf("unable to open repo: %v", err)}
-	}
-
-	ref, err := repo.Head()
-	if err != nil {
-		return Status{location, "", "", fmt.Errorf("unable to get head: %v", err)}
-	}
-
-	if ref.Name() != "refs/heads/master" {
-		return p.Fetch(repo)
-	}
-
-	// Get the working directory for the repository
-	worktree, err := repo.Worktree()
-	if err != nil {
-		return Status{location, "", "", fmt.Errorf("unable to get worktree: %v", err)}
-	}
-
-	return p.Pull(worktree)
-
+	return buf.String(), err
 }
