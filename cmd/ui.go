@@ -10,10 +10,10 @@ import (
 )
 
 type Status struct {
-	path   string
+	Path   string
 	Status string
-	output string
-	err    error
+	Output string
+	Err    error
 }
 
 type ui struct {
@@ -51,9 +51,9 @@ func (ui *ui) makeUI(status Status) string {
 	var sb strings.Builder
 	sb.WriteString("result:")
 
-	if status.path != "" {
+	if status.Path != "" {
 		ui.statuses = append(ui.statuses, status)
-		if status.err != nil {
+		if status.Err != nil {
 			ui.errCount = ui.errCount + 1
 		} else {
 			switch status.Status {
@@ -83,8 +83,8 @@ func (ui *ui) makeUI(status Status) string {
 	sb.WriteString("\n")
 
 	for _, status := range ui.statuses {
-		if status.err != nil {
-			sb.WriteString(fmt.Sprintf(" \u001b[31m✘\u001b[0m  %s - %s\n", status.path, status.err))
+		if status.Err != nil {
+			sb.WriteString(fmt.Sprintf(" \u001b[31m✘\u001b[0m  %s - %s\n", status.Path, status.Err))
 		}
 	}
 

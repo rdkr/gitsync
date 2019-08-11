@@ -31,14 +31,14 @@ The format of the config file is as follows:
 gitlab:
   groups:
   - group: <group-id>
-    location: <local path to sync to>
+    location: <local Path to sync to>
   projects:
   - url: https://...
-    location: <local path to sync to>
+    location: <local Path to sync to>
 anon:
   projects:
   - url: https://...
-	location: <local path to sync to>`
+	location: <local Path to sync to>`
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -62,7 +62,7 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file (default is $HOME/.gitsync.yaml)")
-	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "verbose output")
+	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "verbose Output")
 }
 
 // initConfig reads in config file and ENV variables if set.

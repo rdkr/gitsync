@@ -1,6 +1,6 @@
 package cmd
 
-//go:generate mockgen -destination=../mocks/mock_git.go -package=mocks gitsync/cmd Cloner
+//go:generate mockgen -destination=../mocks/mock_git.go -package=mocks gitsync/cmd Git
 
 import (
 	"bytes"
@@ -11,7 +11,7 @@ import (
 	git_http "gopkg.in/src-d/go-git.v4/plumbing/transport/http"
 )
 
-type Cloner interface {
+type Git interface {
 	PlainOpen() (*git.Repository, error)
 	PlainClone() Status
 	Fetch(*git.Repository) Status
@@ -94,7 +94,7 @@ func (p project) Pull(worktree *git.Worktree) Status {
 
 }
 
-func Clone(p Cloner, location string) Status {
+func Sync(p Git, location string) Status {
 
 	repo, err := p.PlainOpen()
 
@@ -106,7 +106,7 @@ func Clone(p Cloner, location string) Status {
 
 	ref, err := repo.Head()
 	if err != nil {
-		return Status{location, "", "", err}
+		return Status{location, "", "", fmt.Errorf("unable to get head: %v", err)}
 	}
 
 	if ref.Name() != "refs/heads/master" {

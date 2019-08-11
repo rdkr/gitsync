@@ -78,7 +78,7 @@ func (s syncer) processProject() {
 		}
 
 		s.ui.statusChan <- Status{project.Location, "", "", nil}
-		s.ui.statusChan <- Clone(project, project.Location)
+		s.ui.statusChan <- Sync(project, project.Location)
 		s.projectsWG.Done()
 	}
 }
