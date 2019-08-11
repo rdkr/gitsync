@@ -46,7 +46,9 @@ var rootCmd = &cobra.Command{
 	Short: "A tool to keep many git repos in sync with their remote origins",
 	Long:  usage,
 	Run: func(cmd *cobra.Command, args []string) {
-		start()
+		ui := newUI(verbose)
+		cm := newConcurrencyManager(ui, Sync)
+		cm.start()
 	},
 }
 

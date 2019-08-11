@@ -15,8 +15,8 @@ type gitlabGroupProvider struct {
 	*gitlab.Group
 }
 
-func (g gitlabGroupProvider) getGroups() []group {
-	var result []group
+func (g gitlabGroupProvider) getGroups() []groupProcessor {
+	var result []groupProcessor
 
 	groups, _, err := g.client.Groups.ListSubgroups(g.ID, &gitlab.ListSubgroupsOptions{
 		AllAvailable: gitlab.Bool(true),
