@@ -22,10 +22,9 @@ type ui struct {
 	cloneCount, fetchCount, upToDateCount, errCount int
 	statusChan                                      chan Status
 	statuses                                        []Status
-	currentParent                                   string
 }
 
-func newUI(verbose bool) ui {
+func NewUI(verbose bool) ui {
 
 	prettyPrint := !verbose && terminal.IsTerminal(int(os.Stdout.Fd()))
 
@@ -43,7 +42,6 @@ func newUI(verbose bool) ui {
 		errCount:      0,
 		statusChan:    make(chan Status),
 		statuses:      []Status{},
-		currentParent: "",
 	}
 }
 

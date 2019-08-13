@@ -7,12 +7,12 @@ type config struct {
 
 type gitlabConfig struct {
 	Groups   []gitlabGroup `yaml:"groups"`
-	Projects []project     `yaml:"projects"`
+	Projects []Project     `yaml:"projects"`
 	Token    string        `yaml:"token"`
 }
 
 type anonConfig struct {
-	Projects []project `yaml:"projects"`
+	Projects []Project `yaml:"projects"`
 }
 
 type gitlabGroup struct {
@@ -20,7 +20,7 @@ type gitlabGroup struct {
 	Location string `yaml:"location"`
 }
 
-type project struct {
+type Project struct {
 	URL      string `yaml:"url"`
 	Location string `yaml:"location"`
 	Token    string `yaml:"token"`

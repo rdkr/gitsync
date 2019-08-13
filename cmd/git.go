@@ -17,11 +17,11 @@ type Git interface {
 	Pull(*git.Worktree) (string, error)
 }
 
-func (p project) PlainOpen() (*git.Repository, error) {
+func (p Project) PlainOpen() (*git.Repository, error) {
 	return git.PlainOpen(p.Location)
 }
 
-func (p project) PlainClone() (string, error) {
+func (p Project) PlainClone() (string, error) {
 
 	var auth *git_http.BasicAuth
 	if p.Token != "" {
@@ -42,7 +42,7 @@ func (p project) PlainClone() (string, error) {
 	return buf.String(), err
 }
 
-func (p project) Fetch(repo *git.Repository) (string, error) {
+func (p Project) Fetch(repo *git.Repository) (string, error) {
 
 	var auth *git_http.BasicAuth
 	if p.Token != "" {
@@ -62,7 +62,7 @@ func (p project) Fetch(repo *git.Repository) (string, error) {
 	return buf.String(), err
 }
 
-func (p project) Pull(worktree *git.Worktree) (string, error) {
+func (p Project) Pull(worktree *git.Worktree) (string, error) {
 
 	var auth *git_http.BasicAuth
 	if p.Token != "" {

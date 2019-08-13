@@ -178,7 +178,7 @@ func TestSync(t *testing.T) {
 			mockGit := mocks.NewMockGit(ctrl)
 			mockGit = tc.setup(mockGit)
 
-			actual := cmd.Sync(mockGit, "somewhere")
+			actual := cmd.GitSync(mockGit, "somewhere")
 
 			if diff := deep.Equal(actual, tc.expected); diff != nil {
 				t.Error(diff)
@@ -186,7 +186,6 @@ func TestSync(t *testing.T) {
 
 		})
 	}
-
 }
 
 func newRepo() *git.Repository {

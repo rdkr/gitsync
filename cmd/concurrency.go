@@ -1,45 +1,43 @@
 package cmd
 
 import (
-	"github.com/xanzy/go-gitlab"
-	"os"
 	"sync"
 )
 
-type groupProcessor interface {
-	getGroups() []groupProcessor
-	getProjects() []project
-	rootFullPath() string
-	rootLocation() string
+type ProviderProcessor interface {
+	GetGroups() []ProviderProcessor
+	GetProjects() []Project
 }
 
-type concurrencyManager struct {
-	groups   chan groupProcessor
-	projects chan project
+type ConcurrencyManager struct {
+	groups   chan ProviderProcessor
+	projects chan Project
 
 	groupsWG, groupsSignalWG, projectsWG, projectsSignalWG *sync.WaitGroup
 	groupsSignalOnce, projectsSignalOnce                   *sync.Once
 
-	ui               ui
-	projectProcessor func(Git, string) Status
+	getItemsFromCfg GetItemsFromCfg
+	gitSync         GitSyncer
+	ui              ui
 }
 
-func newConcurrencyManager(ui ui, projectProcessor func(Git, string) Status) concurrencyManager {
-	return concurrencyManager{
-		groups:             make(chan groupProcessor),
-		projects:           make(chan project),
+func NewConcurrencyManager(ui ui, getItemsFromCfg GetItemsFromCfg, gitSync GitSyncer) ConcurrencyManager {
+	return ConcurrencyManager{
+		groups:             make(chan ProviderProcessor),
+		projects:           make(chan Project),
 		groupsWG:           new(sync.WaitGroup),
 		groupsSignalWG:     new(sync.WaitGroup),
 		groupsSignalOnce:   new(sync.Once),
 		projectsWG:         new(sync.WaitGroup),
 		projectsSignalWG:   new(sync.WaitGroup),
 		projectsSignalOnce: new(sync.Once),
+		getItemsFromCfg:    getItemsFromCfg,
+		gitSync:            gitSync,
 		ui:                 ui,
-		projectProcessor:   projectProcessor,
 	}
 }
 
-func (cm concurrencyManager) start() {
+func (cm ConcurrencyManager) Start() {
 
 	var wg sync.WaitGroup
 	wg.Add(3)
@@ -53,7 +51,7 @@ func (cm concurrencyManager) start() {
 	// groups manager goroutine
 	go func() {
 
-		// start some groups processors
+		// Start some groups processors
 		for w := 0; w < 10; w++ {
 			go cm.processGroups()
 		}
@@ -76,12 +74,12 @@ func (cm concurrencyManager) start() {
 	// projects manager goroutine
 	go func() {
 
-		// start some projects processors
+		// Start some projects processors
 		for w := 0; w < 20; w++ {
 			go cm.processProject()
 		}
 
-		// wait for a signal that we have a project to process
+		// wait for a signal that we have a Project to process
 		cm.projectsSignalWG.Wait()
 
 		// wait to finish processing all projects
@@ -104,7 +102,21 @@ func (cm concurrencyManager) start() {
 
 	}()
 
-	cm.addItemsFromCfg()
+	groups, projects := cm.getItemsFromCfg()
+
+	for _, g := range groups {
+		cm.groupsWG.Add(1)
+		cm.groups <- g
+	}
+
+	for _, p := range projects {
+		cm.projectsWG.Add(1)
+		cm.projectsSignalOnce.Do(func() { cm.projectsSignalWG.Done() })
+
+		go func(project Project) {
+			cm.projects <- project
+		}(p)
+	}
 
 	cm.groupsWG.Done()
 	cm.groupsSignalOnce.Do(func() { cm.groupsSignalWG.Done() })
@@ -115,59 +127,7 @@ func (cm concurrencyManager) start() {
 	wg.Wait()
 }
 
-func (cm concurrencyManager) addItemsFromCfg() {
-
-	var rootGroups []groupProcessor
-
-	if len(cfg.Gitlab.Groups) > 0 || len(cfg.Gitlab.Projects) > 0 {
-
-		// TODO improve the handline of no / bad token
-
-		token := os.Getenv("GITLAB_TOKEN")
-		if len(token) == 0 {
-			panic("bad token?")
-		}
-
-		c := gitlab.NewClient(nil, token)
-
-		for _, item := range cfg.Gitlab.Groups {
-			root, _, err := c.Groups.GetGroup(item.Group)
-			if err != nil {
-				panic("bad token?")
-			}
-			rootGroups = append(rootGroups, gitlabGroupProvider{c, token, root.FullPath, item.Location, root})
-		}
-
-		for _, p := range cfg.Gitlab.Projects {
-			cm.projectsWG.Add(1)
-			cm.projectsSignalOnce.Do(func() { cm.projectsSignalWG.Done() })
-
-			if p.Token == "" {
-				p.Token = token
-			}
-			go func(project project) {
-				cm.projects <- project
-			}(p)
-		}
-
-	}
-
-	for _, group := range rootGroups {
-		cm.groupsWG.Add(1)
-		cm.groups <- group
-	}
-
-	for _, p := range cfg.Anon.Projects {
-		cm.projectsWG.Add(1)
-		cm.projectsSignalOnce.Do(func() { cm.projectsSignalWG.Done() })
-
-		go func(project project) {
-			cm.projects <- project
-		}(p)
-	}
-}
-
-func (cm concurrencyManager) processGroups() {
+func (cm ConcurrencyManager) processGroups() {
 	for {
 
 		parent, ok := <-cm.groups
@@ -175,24 +135,22 @@ func (cm concurrencyManager) processGroups() {
 			break
 		}
 
-		cm.ui.currentParent = parent.rootFullPath()
-
-		childGroups := parent.getGroups()
+		childGroups := parent.GetGroups()
 
 		for _, child := range childGroups {
 			cm.groupsWG.Add(1)
 			cm.groupsSignalOnce.Do(func() { cm.groupsSignalWG.Done() })
-			go func(group groupProcessor) {
+			go func(group ProviderProcessor) {
 				cm.groups <- group
 			}(child)
 		}
 
-		childProjects := parent.getProjects()
+		childProjects := parent.GetProjects()
 
 		for _, child := range childProjects {
 			cm.projectsWG.Add(1)
 			cm.projectsSignalOnce.Do(func() { cm.projectsSignalWG.Done() })
-			go func(project project) {
+			go func(project Project) {
 				cm.projects <- project
 			}(child)
 		}
@@ -201,7 +159,7 @@ func (cm concurrencyManager) processGroups() {
 	}
 }
 
-func (cm concurrencyManager) processProject() {
+func (cm ConcurrencyManager) processProject() {
 	for {
 
 		project, ok := <-cm.projects
@@ -209,7 +167,7 @@ func (cm concurrencyManager) processProject() {
 			break
 		}
 
-		cm.ui.statusChan <- cm.projectProcessor(project, project.Location)
+		cm.ui.statusChan <- cm.gitSync(project, project.Location)
 		cm.projectsWG.Done()
 	}
 }
