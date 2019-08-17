@@ -2,16 +2,17 @@ package cmd
 
 import (
 	"fmt"
+	"gitsync/sync"
 	"os"
 
-	homedir "github.com/mitchellh/go-homedir"
+	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 var cfgFile string
 var verbose bool
-var cfg config
+var cfg sync.Config
 
 const usage = `gitsync is a tool to keep local git repos in sync with remote git servers.
 
@@ -49,7 +50,7 @@ var rootCmd = &cobra.Command{
 	Short: "A tool to keep many git repos in sync with their remote origins",
 	Long:  usage,
 	Run: func(cmd *cobra.Command, args []string) {
-		cm := NewConcurrencyManager(NewUI(verbose), getItemsFromCfg, GitSync)
+		cm := sync.NewConcurrencyManager(cfg, sync.NewUI(verbose), sync.GetItemsFromCfg, sync.GitSync)
 		cm.Start()
 	},
 }

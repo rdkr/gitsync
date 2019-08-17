@@ -1,38 +1,32 @@
-package cmd
+package sync
 
 import (
 	"errors"
 	"fmt"
 	"github.com/xanzy/go-gitlab"
-	"os"
 
 	"gopkg.in/src-d/go-git.v4"
 )
 
-type GetItemsFromCfg func() ([]ProviderProcessor, []Project)
+type ConfigParser func(Config) ([]ProviderProcessor, []Project)
 type GitSyncer func(Git, string) Status
 
-func getItemsFromCfg() ([]ProviderProcessor, []Project) {
+func GetItemsFromCfg(cfg Config) ([]ProviderProcessor, []Project) {
 
 	var groups []ProviderProcessor
 	var projects []Project
 
 	if len(cfg.Gitlab.Groups) > 0 || len(cfg.Gitlab.Projects) > 0 {
 
-		// TODO improve the handline of no / bad token
-		token := os.Getenv("GITLAB_TOKEN")
-		if len(token) == 0 {
-			panic("bad token?")
-		}
-		c := gitlab.NewClient(nil, token)
+		c := gitlab.NewClient(nil, cfg.Gitlab.Token)
 
 		for _, group := range cfg.Gitlab.Groups {
-			groups = append(groups, &gitlabGroupProvider{c, token, "", group.Location, group.Group})
+			groups = append(groups, &gitlabGroupProvider{c, cfg.Gitlab.Token, "", group.Location, group.Group})
 		}
 
 		for _, project := range cfg.Gitlab.Projects {
 			if project.Token == "" {
-				project.Token = token
+				project.Token = cfg.Gitlab.Token
 			}
 			projects = append(projects, project)
 		}

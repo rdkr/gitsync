@@ -1,4 +1,4 @@
-package cmd
+package sync
 
 import (
 	"fmt"
@@ -8,13 +8,6 @@ import (
 	"github.com/gosuri/uilive"
 	"golang.org/x/crypto/ssh/terminal"
 )
-
-type Status struct {
-	Path   string
-	Status string
-	Output string
-	Err    error
-}
 
 type ui struct {
 	prettyPrint                                     bool

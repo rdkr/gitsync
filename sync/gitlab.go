@@ -1,10 +1,10 @@
-package cmd
+package sync
 
 import (
 	"fmt"
 	"strings"
 
-	gitlab "github.com/xanzy/go-gitlab"
+	"github.com/xanzy/go-gitlab"
 )
 
 type gitlabGroupProvider struct {
@@ -20,7 +20,7 @@ func (g *gitlabGroupProvider) GetGroups() []ProviderProcessor {
 
 	parent, _, err := g.client.Groups.GetGroup(g.ID)
 	if err != nil {
-		panic("bad token?")
+		panic("bad token?") // TODO fix this
 	}
 
 	if g.rootFullPath == "" {

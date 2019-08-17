@@ -1,4 +1,4 @@
-package cmd
+package sync
 
 import (
 	"sync"
@@ -10,19 +10,22 @@ type ProviderProcessor interface {
 }
 
 type ConcurrencyManager struct {
+	cfg Config
+
 	groups   chan ProviderProcessor
 	projects chan Project
 
 	groupsWG, groupsSignalWG, projectsWG, projectsSignalWG *sync.WaitGroup
 	groupsSignalOnce, projectsSignalOnce                   *sync.Once
 
-	getItemsFromCfg GetItemsFromCfg
+	getItemsFromCfg ConfigParser
 	gitSync         GitSyncer
 	ui              ui
 }
 
-func NewConcurrencyManager(ui ui, getItemsFromCfg GetItemsFromCfg, gitSync GitSyncer) ConcurrencyManager {
+func NewConcurrencyManager(cfg Config, ui ui, configParser ConfigParser, gitSync GitSyncer) ConcurrencyManager {
 	return ConcurrencyManager{
+		cfg:                cfg,
 		groups:             make(chan ProviderProcessor),
 		projects:           make(chan Project),
 		groupsWG:           new(sync.WaitGroup),
@@ -31,7 +34,7 @@ func NewConcurrencyManager(ui ui, getItemsFromCfg GetItemsFromCfg, gitSync GitSy
 		projectsWG:         new(sync.WaitGroup),
 		projectsSignalWG:   new(sync.WaitGroup),
 		projectsSignalOnce: new(sync.Once),
-		getItemsFromCfg:    getItemsFromCfg,
+		getItemsFromCfg:    configParser,
 		gitSync:            gitSync,
 		ui:                 ui,
 	}
@@ -102,7 +105,7 @@ func (cm ConcurrencyManager) Start() {
 
 	}()
 
-	groups, projects := cm.getItemsFromCfg()
+	groups, projects := cm.getItemsFromCfg(cm.cfg)
 
 	for _, g := range groups {
 		cm.groupsWG.Add(1)

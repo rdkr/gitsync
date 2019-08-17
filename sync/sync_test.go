@@ -1,11 +1,11 @@
-package cmd_test
+package sync_test
 
 import (
 	"errors"
 	"github.com/go-test/deep"
 	"github.com/golang/mock/gomock"
-	"gitsync/cmd"
 	"gitsync/mocks"
+	"gitsync/sync"
 	"gopkg.in/src-d/go-billy.v4/memfs"
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing"
@@ -18,7 +18,7 @@ import (
 var syncTests = []struct {
 	name     string
 	setup    func(*mocks.MockGit) *mocks.MockGit
-	expected cmd.Status
+	expected sync.Status
 }{
 	{
 		name: "cloneSuccess",
@@ -27,7 +27,7 @@ var syncTests = []struct {
 			mockGit.EXPECT().PlainClone().Return("", nil)
 			return mockGit
 		},
-		expected: cmd.Status{"somewhere", "cloned", "", nil},
+		expected: sync.Status{"somewhere", "cloned", "", nil},
 	},
 	{
 		name: "cloneFail",
@@ -36,7 +36,7 @@ var syncTests = []struct {
 			mockGit.EXPECT().PlainClone().Return("", errors.New("uh oh"))
 			return mockGit
 		},
-		expected: cmd.Status{"somewhere", "", "", errors.New("unable to clone repo: uh oh")},
+		expected: sync.Status{"somewhere", "", "", errors.New("unable to clone repo: uh oh")},
 	},
 	{
 		name: "openFail",
@@ -44,7 +44,7 @@ var syncTests = []struct {
 			mockGit.EXPECT().PlainOpen().Return(nil, errors.New("uh oh"))
 			return mockGit
 		},
-		expected: cmd.Status{"somewhere", "", "", errors.New("unable to open repo: uh oh")},
+		expected: sync.Status{"somewhere", "", "", errors.New("unable to open repo: uh oh")},
 	},
 	{
 		name: "headFail",
@@ -58,7 +58,7 @@ var syncTests = []struct {
 			return mockGit
 
 		},
-		expected: cmd.Status{"somewhere", "", "", errors.New("unable to get head: reference not found")},
+		expected: sync.Status{"somewhere", "", "", errors.New("unable to get head: reference not found")},
 	},
 	{
 		name: "fetchSuccess",
@@ -82,7 +82,7 @@ var syncTests = []struct {
 			return mockGit
 
 		},
-		expected: cmd.Status{Path: "somewhere", Status: "", Err: errors.New("not on master branch but fetched")},
+		expected: sync.Status{Path: "somewhere", Status: "", Err: errors.New("not on master branch but fetched")},
 	},
 	{
 		name: "fetchFail",
@@ -106,7 +106,7 @@ var syncTests = []struct {
 			return mockGit
 
 		},
-		expected: cmd.Status{Path: "somewhere", Status: "", Err: errors.New("not on master branch and: uh oh")},
+		expected: sync.Status{Path: "somewhere", Status: "", Err: errors.New("not on master branch and: uh oh")},
 	},
 	{
 		name: "pullSuccess",
@@ -125,7 +125,7 @@ var syncTests = []struct {
 			return mockGit
 
 		},
-		expected: cmd.Status{Path: "somewhere", Status: "fetched", Err: nil},
+		expected: sync.Status{Path: "somewhere", Status: "fetched", Err: nil},
 	},
 	{
 		name: "pullUpToDate",
@@ -144,7 +144,7 @@ var syncTests = []struct {
 			return mockGit
 
 		},
-		expected: cmd.Status{Path: "somewhere", Status: "uptodate", Err: nil},
+		expected: sync.Status{Path: "somewhere", Status: "uptodate", Err: nil},
 	},
 	{
 		name: "pullFail",
@@ -163,7 +163,7 @@ var syncTests = []struct {
 			return mockGit
 
 		},
-		expected: cmd.Status{Path: "somewhere", Status: "", Err: errors.New("unable to pull master: uh oh")},
+		expected: sync.Status{Path: "somewhere", Status: "", Err: errors.New("unable to pull master: uh oh")},
 	},
 }
 
@@ -178,7 +178,7 @@ func TestSync(t *testing.T) {
 			mockGit := mocks.NewMockGit(ctrl)
 			mockGit = tc.setup(mockGit)
 
-			actual := cmd.GitSync(mockGit, "somewhere")
+			actual := sync.GitSync(mockGit, "somewhere")
 
 			if diff := deep.Equal(actual, tc.expected); diff != nil {
 				t.Error(diff)

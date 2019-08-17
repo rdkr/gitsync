@@ -1,6 +1,6 @@
-package cmd
+package sync
 
-type config struct {
+type Config struct {
 	Gitlab gitlabConfig `yaml:"gitlab"`
 	Anon   anonConfig   `yaml:"anon"`
 }
