@@ -1,4 +1,5 @@
-# gitsync
+# gitsync [![Build Status](https://travis-ci.org/rdkr/gitsync.svg)](https://travis-ci.org/rdkr/gitsync) [![codecov.io](https://codecov.io/github/rdkr/gitsync/coverage.svg)](https://codecov.io/github/rdkr/gitsync)
+
 ```
 gitsync is a tool to keep local git repos in sync with remote git servers.
 
