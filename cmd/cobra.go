@@ -2,12 +2,12 @@ package cmd
 
 import (
 	"fmt"
-	"gitsync/sync"
-	"os"
-
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"gitsync/sync"
+	"golang.org/x/crypto/ssh/terminal"
+	"os"
 )
 
 var cfgFile string
@@ -17,32 +17,37 @@ var cfg sync.Config
 const usage = `gitsync is a tool to keep local git repos in sync with remote git servers.
 
 It supports individual repos and git service provider groups accessed over
-HTTPS and authenticated either anonymously or with a token. Groups are
-recursed to find projects and projects are concurrently cloned, pulled, or
-fetched as appropriate.
+HTTPS and authenticated either anonymously or with a token.
+
+Groups are recursed to find projects and projects are concurrently cloned,
+pulled, or fetched as appropriate.
 
 Supported git service providers:
- - GitLab groups and repos over HTTPS (GITLAB_TOKEN env var should be set)
+ - GitLab groups and repos over HTTPS
  - Anonymous repos over HTTPS
 
-A .yaml config file is expected, and will be found from:
+A .yaml config file is expected, The format of the config file is:
+
+gitlab:         # optional: defines GitLab resources
+  token:        # required: a GitLab API token
+  groups:       # optional: defines GitLab groups
+  - group:      # required: group ID number
+    location:   # required: local path to sync to
+  projects:     # optional: defines GitLab projects
+  - url:        # required: https clone url
+    location:   # required: local path to sync to
+anon:           # optional: defines any other resources
+  projects:     # optional: defines any HTTPS projects
+  - url:        # required: https clone url
+    location:   # required: local path to sync to
+    token:      # optional: HTTPS token to use
+
+The config file will will be found, by order of precedence, from:
  - $HOME/.gitsync.yaml
  - $PWD/.gitsync.yaml
  - as specified using the --config/-c flag
 
-The format of the config file is as follows:
-
-gitlab:
-  groups:
-  - group: <group-id>
-    location: <local path to sync to>
-  projects:
-  - url: <https clone url>
-    location: <local path to sync to>
-anon:
-  projects:
-  - url: <https clone url>
-	location: <local path to sync to>`
+Treat this file with care, as it may contain secrets.`
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -50,7 +55,8 @@ var rootCmd = &cobra.Command{
 	Short: "A tool to keep many git repos in sync with their remote origins",
 	Long:  usage,
 	Run: func(cmd *cobra.Command, args []string) {
-		cm := sync.NewConcurrencyManager(cfg, sync.NewUI(verbose), sync.GetItemsFromCfg, sync.GitSync)
+		isTerminal := terminal.IsTerminal(int(os.Stdout.Fd()))
+		cm := sync.NewConcurrencyManager(cfg, sync.NewUI(isTerminal, verbose), sync.GetItemsFromCfg, sync.GitSync)
 		cm.Start()
 	},
 }
@@ -66,8 +72,8 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file (default is $HOME/.gitsync.yaml)")
-	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "verbose Output")
+	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file location")
+	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "verbose / script friendly output")
 }
 
 // initConfig reads in config file and ENV variables if set.

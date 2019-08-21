@@ -2,43 +2,45 @@ package sync
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/gosuri/uilive"
-	"golang.org/x/crypto/ssh/terminal"
 )
 
-type ui struct {
-	prettyPrint                                     bool
+type UI struct {
+	verbose                                         bool
 	writer                                          *uilive.Writer
 	cloneCount, fetchCount, upToDateCount, errCount int
-	statusChan                                      chan Status
+	StatusChan                                      chan Status
 	statuses                                        []Status
 }
 
-func NewUI(verbose bool) ui {
+func ShouldBeVerbose(isTerminal, verbose bool) bool {
+	return !isTerminal || verbose
+}
 
-	prettyPrint := !verbose && terminal.IsTerminal(int(os.Stdout.Fd()))
+func NewUI(isTerminal, verbose bool) UI {
+
+	verbose = ShouldBeVerbose(isTerminal, verbose)
 
 	writer := uilive.New() // TODO this is created even though its not necessarily used
 	if !verbose {
 		writer.Start()
 	}
 
-	return ui{
-		prettyPrint:   prettyPrint,
+	return UI{
+		verbose:       verbose,
 		writer:        writer,
 		cloneCount:    0,
 		fetchCount:    0,
 		upToDateCount: 0,
 		errCount:      0,
-		statusChan:    make(chan Status),
+		StatusChan:    make(chan Status),
 		statuses:      []Status{},
 	}
 }
 
-func (ui *ui) makeUI(status Status) string {
+func (ui *UI) MakeUI(status Status) string {
 	var sb strings.Builder
 	sb.WriteString("result:")
 
@@ -82,16 +84,16 @@ func (ui *ui) makeUI(status Status) string {
 	return sb.String()
 }
 
-func (ui *ui) run() {
+func (ui *UI) Run() {
 	for {
 
-		status, ok := <-ui.statusChan
+		status, ok := <-ui.StatusChan
 		if !ok {
 			break
 		}
 
-		if ui.prettyPrint {
-			fmt.Fprint(ui.writer.Newline(), ui.makeUI(status))
+		if !ui.verbose {
+			fmt.Fprint(ui.writer.Newline(), ui.MakeUI(status))
 			ui.writer.Flush() // it randomly prints multiple lines without this
 		} else {
 			fmt.Println(status)

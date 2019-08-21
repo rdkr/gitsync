@@ -20,10 +20,10 @@ type ConcurrencyManager struct {
 
 	getItemsFromCfg ConfigParser
 	gitSync         GitSyncer
-	ui              ui
+	ui              UI
 }
 
-func NewConcurrencyManager(cfg Config, ui ui, configParser ConfigParser, gitSync GitSyncer) ConcurrencyManager {
+func NewConcurrencyManager(cfg Config, ui UI, configParser ConfigParser, gitSync GitSyncer) ConcurrencyManager {
 	return ConcurrencyManager{
 		cfg:                cfg,
 		groups:             make(chan ProviderProcessor),
@@ -89,18 +89,18 @@ func (cm ConcurrencyManager) Start() {
 		cm.projectsWG.Wait()
 		close(cm.projects)
 
-		// ensure we have processed all projects before stopping the ui
-		close(cm.ui.statusChan)
+		// ensure we have processed all projects before stopping the UI
+		close(cm.ui.StatusChan)
 
 		// stop the projects manager goroutine
 		wg.Done()
 
 	}()
 
-	// ui manager goroutine
+	// UI manager goroutine
 	go func() {
 
-		cm.ui.run()
+		cm.ui.Run()
 		wg.Done()
 
 	}()
@@ -170,7 +170,7 @@ func (cm ConcurrencyManager) processProject() {
 			break
 		}
 
-		cm.ui.statusChan <- cm.gitSync(project, project.Location)
+		cm.ui.StatusChan <- cm.gitSync(project, project.Location)
 		cm.projectsWG.Done()
 	}
 }
