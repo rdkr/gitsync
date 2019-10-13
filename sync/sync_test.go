@@ -27,7 +27,7 @@ var syncTests = []struct {
 			mockGit.EXPECT().PlainClone().Return("", nil)
 			return mockGit
 		},
-		expected: sync.Status{"somewhere", "cloned", "", nil},
+		expected: sync.Status{"somewhere", sync.StatusCloned, "", nil},
 	},
 	{
 		name: "cloneFail",
@@ -36,7 +36,7 @@ var syncTests = []struct {
 			mockGit.EXPECT().PlainClone().Return("", errors.New("uh oh"))
 			return mockGit
 		},
-		expected: sync.Status{"somewhere", "", "", errors.New("unable to clone repo: uh oh")},
+		expected: sync.Status{"somewhere", sync.StatusError, "", errors.New("unable to clone repo: uh oh")},
 	},
 	{
 		name: "openFail",
@@ -44,7 +44,7 @@ var syncTests = []struct {
 			mockGit.EXPECT().PlainOpen().Return(nil, errors.New("uh oh"))
 			return mockGit
 		},
-		expected: sync.Status{"somewhere", "", "", errors.New("unable to open repo: uh oh")},
+		expected: sync.Status{"somewhere", sync.StatusError, "", errors.New("unable to open repo: uh oh")},
 	},
 	{
 		name: "headFail",
@@ -58,7 +58,7 @@ var syncTests = []struct {
 			return mockGit
 
 		},
-		expected: sync.Status{"somewhere", "", "", errors.New("unable to get head: reference not found")},
+		expected: sync.Status{"somewhere", sync.StatusError, "", errors.New("unable to get head: reference not found")},
 	},
 	{
 		name: "fetchSuccess",
@@ -82,7 +82,7 @@ var syncTests = []struct {
 			return mockGit
 
 		},
-		expected: sync.Status{Path: "somewhere", Status: "", Err: errors.New("not on master branch but fetched")},
+		expected: sync.Status{Path: "somewhere", Status: sync.StatusError, Err: errors.New("not on master branch but fetched")},
 	},
 	{
 		name: "fetchFail",
@@ -106,7 +106,7 @@ var syncTests = []struct {
 			return mockGit
 
 		},
-		expected: sync.Status{Path: "somewhere", Status: "", Err: errors.New("not on master branch and: uh oh")},
+		expected: sync.Status{Path: "somewhere", Status: sync.StatusError, Err: errors.New("not on master branch and: uh oh")},
 	},
 	{
 		name: "pullSuccess",
@@ -125,7 +125,7 @@ var syncTests = []struct {
 			return mockGit
 
 		},
-		expected: sync.Status{Path: "somewhere", Status: "fetched", Err: nil},
+		expected: sync.Status{Path: "somewhere", Status: sync.StatusFetched, Err: nil},
 	},
 	{
 		name: "pullUpToDate",
@@ -144,7 +144,7 @@ var syncTests = []struct {
 			return mockGit
 
 		},
-		expected: sync.Status{Path: "somewhere", Status: "uptodate", Err: nil},
+		expected: sync.Status{Path: "somewhere", Status: sync.StatusUpToDate, Err: nil},
 	},
 	{
 		name: "pullFail",
@@ -163,7 +163,7 @@ var syncTests = []struct {
 			return mockGit
 
 		},
-		expected: sync.Status{Path: "somewhere", Status: "", Err: errors.New("unable to pull master: uh oh")},
+		expected: sync.Status{Path: "somewhere", Status: sync.StatusError, Err: errors.New("unable to pull master: uh oh")},
 	},
 }
 

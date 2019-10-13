@@ -90,9 +90,9 @@ func testUI(verbose bool) {
 
 func getStatuses() []gs.Status {
 	return []gs.Status{
-		{"testpath1", "error", "", errors.New("o no")},
-		{"testpath2", "fetched", "", nil},
-		{"testpath3", "cloned", "", nil},
-		{"testpath4", "uptodate", "", nil},
+		{"testpath1", gs.StatusError, "", errors.New("o no")},
+		{"testpath2", gs.StatusFetched, "", nil},
+		{"testpath3", gs.StatusCloned, "", nil},
+		{"testpath4", gs.StatusUpToDate, "", nil},
 	}
 }

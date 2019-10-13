@@ -6,7 +6,7 @@ import (
 )
 
 func mockGitSync(p sync.Git, location string) sync.Status {
-	return sync.Status{location, "", "", nil}
+	return sync.Status{location, sync.StatusError, "", nil}
 }
 
 type testGroupProvider struct {

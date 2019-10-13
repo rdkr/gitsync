@@ -9,9 +9,16 @@ import (
 	git_http "gopkg.in/src-d/go-git.v4/plumbing/transport/http"
 )
 
+const (
+	StatusError = iota
+	StatusCloned
+	StatusFetched
+	StatusUpToDate
+)
+
 type Status struct {
 	Path   string
-	Status string
+	Status int
 	Output string
 	Err    error
 }

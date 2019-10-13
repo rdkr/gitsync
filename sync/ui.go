@@ -7,6 +7,13 @@ import (
 	"github.com/gosuri/uilive"
 )
 
+const (
+	SymbolError    = "\u001b[31m✘ \u001b[0m "
+	SymbolClone    = "\u001b[36m🞦 \u001b[0m"
+	SymbolFetch    = "\u001b[33m🡻 \u001b[0m"
+	SymbolUpToDate = "\u001b[32m✔ \u001b[0m "
+)
+
 type UI struct {
 	verbose                                         bool
 	writer                                          *uilive.Writer
@@ -50,34 +57,37 @@ func (ui *UI) MakeUI(status Status) string {
 			ui.errCount = ui.errCount + 1
 		} else {
 			switch status.Status {
-			case "cloned":
+			case StatusCloned:
 				ui.cloneCount = ui.cloneCount + 1
-			case "fetched":
+			case StatusFetched:
 				ui.fetchCount = ui.fetchCount + 1
-			case "uptodate":
+			case StatusUpToDate:
 				ui.upToDateCount = ui.upToDateCount + 1
 			}
 		}
 	}
 
 	if ui.cloneCount > 0 {
-		sb.WriteString(fmt.Sprintf(" %d \u001b[36m+\u001b[0m  ", ui.cloneCount))
+		sb.WriteString(fmt.Sprintf(" %d %s", ui.cloneCount, SymbolClone))
 	}
 	if ui.fetchCount > 0 {
-		sb.WriteString(fmt.Sprintf(" %d \u001b[33m⟳\u001b[0m  ", ui.fetchCount))
+		sb.WriteString(fmt.Sprintf(" %d %s", ui.fetchCount, SymbolFetch))
 	}
 	if ui.upToDateCount > 0 {
-		sb.WriteString(fmt.Sprintf(" %d \u001b[32m✔\u001b[0m  ", ui.upToDateCount))
+		sb.WriteString(fmt.Sprintf(" %d %s", ui.upToDateCount, SymbolUpToDate))
 	}
 	if ui.errCount > 0 {
-		sb.WriteString(fmt.Sprintf(" %d \u001b[31m✘\u001b[0m  ", ui.errCount))
+		sb.WriteString(fmt.Sprintf(" %d %s", ui.errCount, SymbolError))
 	}
 
 	sb.WriteString("\n")
 
 	for _, status := range ui.statuses {
-		if status.Err != nil {
-			sb.WriteString(fmt.Sprintf(" \u001b[31m✘\u001b[0m  %s - %s\n", status.Path, status.Err))
+		switch status.Status {
+		case StatusCloned:
+			sb.WriteString(fmt.Sprintf(" %s%s\n", SymbolClone, status.Path))
+		case StatusError:
+			sb.WriteString(fmt.Sprintf(" %s%s - %s\n", SymbolError, status.Path, status.Err))
 		}
 	}
 
