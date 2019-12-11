@@ -9,8 +9,8 @@ import (
 
 const (
 	SymbolError    = "\u001b[31m✘ \u001b[0m "
-	SymbolClone    = "\u001b[36m🞦 \u001b[0m"
-	SymbolFetch    = "\u001b[33m🡻 \u001b[0m"
+	SymbolClone    = "\u001b[36m✚  \u001b[0m"
+	SymbolFetch    = "\u001b[33m↓  \u001b[0m"
 	SymbolUpToDate = "\u001b[32m✔ \u001b[0m "
 )
 
