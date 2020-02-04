@@ -1,7 +1,7 @@
 package sync_test
 
 import (
-	"gitsync/sync"
+	"github.com/rdkr/gitsync/sync"
 	"testing"
 )
 

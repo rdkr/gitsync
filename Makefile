@@ -1,4 +1,5 @@
 test:
+	go generate
 	go test -race -v ./...
 
 readme:

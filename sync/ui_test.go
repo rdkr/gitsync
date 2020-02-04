@@ -2,7 +2,7 @@ package sync_test
 
 import (
 	"errors"
-	gs "gitsync/sync"
+	gs "github.com/rdkr/gitsync/sync"
 	"sync"
 	"testing"
 )

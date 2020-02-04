@@ -1,4 +1,4 @@
-module gitsync
+module github.com/rdkr/gitsync
 
 go 1.12
 

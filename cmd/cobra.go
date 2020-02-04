@@ -3,9 +3,9 @@ package cmd
 import (
 	"fmt"
 	"github.com/mitchellh/go-homedir"
+	"github.com/rdkr/gitsync/sync"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"gitsync/sync"
 	"golang.org/x/crypto/ssh/terminal"
 	"os"
 )
