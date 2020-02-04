@@ -9,12 +9,6 @@ import (
 
 // not really tests, but useful for checking the UI output formatters
 
-//func TestPrettyUI(t *testing.T) {
-//	ui := gs.NewUI(false)
-//	addStatuses(&ui)
-//	fmt.Println(ui.MakeUI(gs.Status{"done", "", "", nil}))
-//}
-
 func TestShouldBeVerbose(t *testing.T) {
 	type args struct {
 		isTerminal bool

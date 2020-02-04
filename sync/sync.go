@@ -63,7 +63,7 @@ func GitSync(p Git, location string) Status {
 	if ref.Name() != "refs/heads/master" {
 		progress, err := p.Fetch(repo)
 
-		if err == git.NoErrAlreadyUpToDate {
+		if err == git.NoErrAlreadyUpToDate || err == nil {
 			return Status{location, StatusError, progress, errors.New("not on master branch but fetched")}
 		}
 		return Status{location, StatusError, progress, fmt.Errorf("not on master branch and: %v", err)}
