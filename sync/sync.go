@@ -32,9 +32,7 @@ func GetItemsFromCfg(cfg Config) ([]ProviderProcessor, []Project) {
 		}
 	}
 
-	for _, project := range cfg.Anon.Projects {
-		projects = append(projects, project)
-	}
+	projects = append(projects, cfg.Anon.Projects...)
 
 	return groups, projects
 }

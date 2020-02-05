@@ -68,11 +68,14 @@ var syncTests = []struct {
 		setup: func(mockGit *mocks.MockGit) *mocks.MockGit {
 
 			memFS := memfs.New()
-			memFS.Create("test")
+			_, err := memFS.Create("test")
+			if err != nil {
+				panic(err)
+			}
 
 			r, err := git.Init(memory.NewStorage(), memFS)
 			if err != nil {
-				panic(err) // t.Error(err)
+				panic(err)
 			}
 
 			mockGit.EXPECT().PlainOpen().Return(r, nil)
@@ -213,16 +216,19 @@ func TestSync(t *testing.T) {
 func newRepo() *git.Repository {
 
 	memFS := memfs.New()
-	memFS.Create("test")
+	_, err := memFS.Create("test")
+	if err != nil {
+		panic(err)
+	}
 
 	r, err := git.Init(memory.NewStorage(), memFS)
 	if err != nil {
-		panic(err) // t.Error(err)
+		panic(err)
 	}
 
 	w, err := r.Worktree()
 	if err != nil {
-		panic(err) // t.Error(err)
+		panic(err)
 	}
 
 	_, err = w.Commit("Test Add And Commit", &git.CommitOptions{Author: &object.Signature{
@@ -231,7 +237,7 @@ func newRepo() *git.Repository {
 		When:  time.Now(),
 	}})
 	if err != nil {
-		panic(err) // t.Error(err)
+		panic(err)
 	}
 
 	return r
