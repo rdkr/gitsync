@@ -47,11 +47,33 @@ var syncTests = []struct {
 		expected: sync.Status{"somewhere", sync.StatusError, "", errors.New("unable to open repo: uh oh")},
 	},
 	{
+		name: "workTreeFail",
+		setup: func(mockGit *mocks.MockGit) *mocks.MockGit {
+
+			// a bare repo with no worktree
+			r, err := git.Init(memory.NewStorage(), nil)
+			if err != nil {
+				panic(err)
+			}
+
+			mockGit.EXPECT().PlainOpen().Return(r, nil)
+
+			return mockGit
+
+		},
+		expected: sync.Status{"somewhere", sync.StatusError, "", errors.New("unable to get worktree: worktree not available in a bare repository")},
+	},
+	{
 		name: "headFail",
 		setup: func(mockGit *mocks.MockGit) *mocks.MockGit {
 
-			// a bare repo with no head
-			r, _ := git.Init(memory.NewStorage(), nil)
+			memFS := memfs.New()
+			memFS.Create("test")
+
+			r, err := git.Init(memory.NewStorage(), memFS)
+			if err != nil {
+				panic(err) // t.Error(err)
+			}
 
 			mockGit.EXPECT().PlainOpen().Return(r, nil)
 

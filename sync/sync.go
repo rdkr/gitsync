@@ -55,6 +55,13 @@ func GitSync(p Git, location string) Status {
 		return Status{location, StatusError, "", fmt.Errorf("unable to open repo: %v", err)}
 	}
 
+	// TODO gracefully support bare repos
+	// Get the working directory for the repository
+	worktree, err := repo.Worktree()
+	if err != nil {
+		return Status{location, StatusError, "", fmt.Errorf("unable to get worktree: %v", err)}
+	}
+
 	ref, err := repo.Head()
 	if err != nil {
 		return Status{location, StatusError, "", fmt.Errorf("unable to get head: %v", err)}
@@ -68,13 +75,6 @@ func GitSync(p Git, location string) Status {
 		}
 		return Status{location, StatusError, progress, fmt.Errorf("not on master branch and: %v", err)}
 
-	}
-
-	// TODO gracefully support bare repos
-	// Get the working directory for the repository
-	worktree, err := repo.Worktree()
-	if err != nil {
-		return Status{location, StatusError, "", fmt.Errorf("unable to get worktree: %v", err)}
 	}
 
 	progress, err := p.Pull(worktree)
