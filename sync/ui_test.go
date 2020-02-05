@@ -42,7 +42,7 @@ func TestShouldBeVerbose(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := gs.ShouldBeVerbose(tt.args.isTerminal, tt.args.verbose); got != tt.want {
+			if got := gs.ShouldBeVerbose(tt.args.isTerminal, tt.args.verbose, false); got != tt.want {
 				t.Errorf("ShouldBeVerbose() = %v, want %v", got, tt.want)
 			}
 		})
@@ -50,16 +50,20 @@ func TestShouldBeVerbose(t *testing.T) {
 }
 
 func TestPrettyUI(t *testing.T) {
-	testUI(false)
+	testUI(false, false)
 }
 
 func TestVerboseUI(t *testing.T) {
-	testUI(true)
+	testUI(true, false)
 }
 
-func testUI(verbose bool) {
+func TestVerboseUIDebug(t *testing.T) {
+	testUI(true, true)
+}
 
-	ui := gs.NewUI(true, verbose)
+func testUI(verbose, debug bool) {
+
+	ui := gs.NewUI(true, verbose, debug)
 	statuses := getStatuses()
 
 	wg := sync.WaitGroup{}

@@ -2,6 +2,7 @@ package sync
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"strings"
 
 	"github.com/gosuri/uilive"
@@ -22,17 +23,21 @@ type UI struct {
 	statuses                                        []Status
 }
 
-func ShouldBeVerbose(isTerminal, verbose bool) bool {
-	return !isTerminal || verbose
+func ShouldBeVerbose(isTerminal, verbose, debug bool) bool {
+	return !isTerminal || verbose || debug
 }
 
-func NewUI(isTerminal, verbose bool) UI {
+func NewUI(isTerminal, verbose, debug bool) UI {
 
-	verbose = ShouldBeVerbose(isTerminal, verbose)
+	verbose = ShouldBeVerbose(isTerminal, verbose, debug)
 
 	writer := uilive.New() // TODO this is created even though its not necessarily used
 	if !verbose {
 		writer.Start()
+	}
+
+	if debug {
+		logrus.SetLevel(logrus.DebugLevel)
 	}
 
 	return UI{
@@ -106,7 +111,17 @@ func (ui *UI) Run() {
 			fmt.Fprint(ui.writer.Newline(), ui.MakeUI(status))
 			ui.writer.Flush() // it randomly prints multiple lines without this
 		} else {
-			fmt.Println(status)
+			fields := logrus.Fields{"path": status.Path}
+			switch status.Status {
+			case StatusError:
+				logrus.WithFields(fields).WithField("error", status.Err).Warn("error")
+			case StatusCloned:
+				logrus.WithFields(fields).Info("cloned")
+			case StatusFetched:
+				logrus.WithFields(fields).Debug("fetched")
+			case StatusUpToDate:
+				logrus.WithFields(fields).Debug("up to date")
+			}
 		}
 	}
 }

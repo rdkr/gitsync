@@ -108,7 +108,7 @@ var concurrencyTests = []struct {
 func TestConcurrency(t *testing.T) {
 	for _, tc := range concurrencyTests {
 		t.Run(tc.name, func(t *testing.T) {
-			sync.NewConcurrencyManager(sync.Config{}, sync.NewUI(true, true), tc.mockGetItemsFromCfg, mockGitSync).Start()
+			sync.NewConcurrencyManager(sync.Config{}, sync.NewUI(true, true, false), tc.mockGetItemsFromCfg, mockGitSync).Start()
 		})
 	}
 }
