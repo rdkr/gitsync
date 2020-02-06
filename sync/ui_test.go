@@ -7,8 +7,6 @@ import (
 	"testing"
 )
 
-// not really tests, but useful for checking the UI output formatters
-
 func TestShouldBeVerbose(t *testing.T) {
 	type args struct {
 		isTerminal bool
@@ -48,6 +46,8 @@ func TestShouldBeVerbose(t *testing.T) {
 		})
 	}
 }
+
+// not really tests, but useful for checking the UI output formatters
 
 func TestPrettyUI(t *testing.T) {
 	testUI(false, false)

@@ -54,7 +54,7 @@ func NewUI(isTerminal, verbose, debug bool) UI {
 
 func (ui *UI) MakeUI(status Status) string {
 	var sb strings.Builder
-	sb.WriteString("result:")
+	sb.WriteString("summary:")
 
 	if status.Path != "" {
 		ui.statuses = append(ui.statuses, status)
@@ -87,15 +87,6 @@ func (ui *UI) MakeUI(status Status) string {
 
 	sb.WriteString("\n")
 
-	for _, status := range ui.statuses {
-		switch status.Status {
-		case StatusCloned:
-			sb.WriteString(fmt.Sprintf(" %s%s\n", SymbolClone, status.Path))
-		case StatusError:
-			sb.WriteString(fmt.Sprintf(" %s%s - %s\n", SymbolError, status.Path, status.Err))
-		}
-	}
-
 	return sb.String()
 }
 
@@ -104,12 +95,28 @@ func (ui *UI) Run() {
 
 		status, ok := <-ui.StatusChan
 		if !ok {
+			if !ui.verbose {
+				ui.writer.Stop()
+			}
 			break
 		}
 
 		if !ui.verbose {
-			fmt.Fprint(ui.writer.Newline(), ui.MakeUI(status))
-			ui.writer.Flush() // it randomly prints multiple lines without this
+			switch status.Status {
+			case StatusCloned:
+				fmt.Fprint(ui.writer, fmt.Sprintf(" %s%s\n", SymbolClone, status.Path))
+				ui.writer.Stop()
+				ui.writer = uilive.New()
+				ui.writer.Start()
+			case StatusError:
+				fmt.Fprint(ui.writer, fmt.Sprintf(" %s%s - %s\n", SymbolError, status.Path, status.Err))
+				ui.writer.Stop()
+				ui.writer = uilive.New()
+				ui.writer.Start()
+			}
+
+			fmt.Fprint(ui.writer, ui.MakeUI(status))
+
 		} else {
 			fields := logrus.Fields{"path": status.Path}
 			switch status.Status {
