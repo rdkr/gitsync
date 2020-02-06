@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/mitchellh/go-homedir"
 	"github.com/rdkr/gitsync/sync"
 	"github.com/sirupsen/logrus"
@@ -98,14 +97,13 @@ func initConfig() {
 	}
 
 	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		// fmt.Println("Using config file:", viper.ConfigFileUsed())
-	} else {
-		fmt.Println(err)
+	err := viper.ReadInConfig()
+	if err != nil {
+		logrus.Fatal(err)
 	}
 
-	err := viper.Unmarshal(&cfg)
+	err = viper.Unmarshal(&cfg)
 	if err != nil {
-		fmt.Println(err)
+		logrus.Fatal(err)
 	}
 }

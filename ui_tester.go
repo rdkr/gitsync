@@ -22,7 +22,7 @@ func main() {
 	}()
 	go func() {
 		for i := 0; i < statuses; i++ {
-			time.Sleep(time.Millisecond*10)
+			time.Sleep(time.Millisecond * 10)
 			ui.StatusChan <- getStatus(i)
 			wg.Done()
 		}
@@ -41,7 +41,7 @@ func getStatus(i int) gs.Status {
 		{"testpath3", gs.StatusCloned, "", nil},
 		{"testpath4", gs.StatusUpToDate, "", nil},
 	}
-	s := rand.NewSource(int64(1337+i))
+	s := rand.NewSource(int64(1337 + i))
 	r := rand.New(s)
 	return statuses[r.Intn(len(statuses))]
 }

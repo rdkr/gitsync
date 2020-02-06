@@ -2,6 +2,7 @@ package sync
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"strings"
 
 	"github.com/xanzy/go-gitlab"
@@ -10,7 +11,7 @@ import (
 type gitlabGroupProvider struct {
 	client       *gitlab.Client
 	token        string
-	rootFullPath string // TODO rename group root path
+	rootFullPath string
 	location     string
 	ID           int
 }
@@ -20,7 +21,7 @@ func (g *gitlabGroupProvider) GetGroups() []ProviderProcessor {
 
 	parent, _, err := g.client.Groups.GetGroup(g.ID)
 	if err != nil {
-		panic("bad token?") // TODO fix this
+		logrus.Fatal(err)
 	}
 
 	if g.rootFullPath == "" {
