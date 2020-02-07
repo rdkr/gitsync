@@ -1,4 +1,4 @@
-package sync
+package concurrency
 
 type Config struct {
 	Gitlab gitlabConfig `yaml:"gitlab"`

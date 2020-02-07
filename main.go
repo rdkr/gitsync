@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/mitchellh/go-homedir"
+	"github.com/rdkr/gitsync/concurrency"
 	"github.com/rdkr/gitsync/sync"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -13,7 +14,7 @@ import (
 var cfgFile string
 var verbose bool
 var debug bool
-var cfg sync.Config
+var cfg concurrency.Config
 
 const usage = `gitsync is a tool to keep local Git repos in sync with remote Git hosts.
 
@@ -51,15 +52,30 @@ The config file will will be found, by order of precedence, from:
 
 Treat this file with care, as it may contain secrets.`
 
-// rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "gitsync",
 	Short: "A tool to keep local Git repos in sync with remote Git servers",
 	Long:  usage,
 	Run: func(cmd *cobra.Command, args []string) {
+
+		// create and run ui
 		isTerminal := terminal.IsTerminal(int(os.Stdout.Fd()))
-		cm := sync.NewConcurrencyManager(cfg, sync.NewUI(isTerminal, verbose, debug), sync.GetItemsFromCfg, sync.GitSync)
-		cm.Start()
+		ui := sync.NewUI(isTerminal, verbose, debug)
+		go ui.Run()
+
+		// create and run concurrency with gitsync
+		cm := concurrency.NewManager(cfg, sync.GitSyncHelper)
+		go cm.Start(sync.GetItemsFromCfg(cfg))
+
+		// hook ui into cm
+		for {
+			status, ok := <-cm.StatusChan
+			if !ok {
+				break
+			}
+			ui.StatusChan <- status
+		}
+
 	},
 }
 

@@ -2,6 +2,7 @@ package sync
 
 import (
 	"fmt"
+	"github.com/rdkr/gitsync/concurrency"
 	"github.com/sirupsen/logrus"
 	"strings"
 
@@ -19,8 +20,8 @@ type UI struct {
 	verbose                                         bool
 	writer                                          *uilive.Writer
 	cloneCount, fetchCount, upToDateCount, errCount int
-	StatusChan                                      chan Status
-	statuses                                        []Status
+	StatusChan                                      chan concurrency.Status
+	statuses                                        []concurrency.Status
 }
 
 func ShouldBeVerbose(isTerminal, verbose, debug bool) bool {
@@ -47,12 +48,12 @@ func NewUI(isTerminal, verbose, debug bool) UI {
 		fetchCount:    0,
 		upToDateCount: 0,
 		errCount:      0,
-		StatusChan:    make(chan Status),
-		statuses:      []Status{},
+		StatusChan:    make(chan concurrency.Status),
+		statuses:      []concurrency.Status{},
 	}
 }
 
-func (ui *UI) MakeUI(status Status) string {
+func (ui *UI) MakeUI(status concurrency.Status) string {
 	var sb strings.Builder
 	sb.WriteString("summary:")
 
@@ -62,11 +63,11 @@ func (ui *UI) MakeUI(status Status) string {
 			ui.errCount = ui.errCount + 1
 		} else {
 			switch status.Status {
-			case StatusCloned:
+			case concurrency.StatusCloned:
 				ui.cloneCount = ui.cloneCount + 1
-			case StatusFetched:
+			case concurrency.StatusFetched:
 				ui.fetchCount = ui.fetchCount + 1
-			case StatusUpToDate:
+			case concurrency.StatusUpToDate:
 				ui.upToDateCount = ui.upToDateCount + 1
 			}
 		}
@@ -103,32 +104,43 @@ func (ui *UI) Run() {
 
 		if !ui.verbose {
 			switch status.Status {
-			case StatusCloned:
-				fmt.Fprint(ui.writer, fmt.Sprintf(" %s%s\n", SymbolClone, status.Path))
+			case concurrency.StatusCloned:
+				_, err := fmt.Fprint(ui.writer, fmt.Sprintf(" %s%s\n", SymbolClone, status.Path))
+				checkErr(err)
 				ui.writer.Stop()
 				ui.writer = uilive.New()
 				ui.writer.Start()
-			case StatusError:
-				fmt.Fprint(ui.writer, fmt.Sprintf(" %s%s - %s\n", SymbolError, status.Path, status.Err))
+			case concurrency.StatusError:
+				_, err := fmt.Fprint(ui.writer, fmt.Sprintf(" %s%s - %s\n", SymbolError, status.Path, status.Err))
+				checkErr(err)
 				ui.writer.Stop()
 				ui.writer = uilive.New()
 				ui.writer.Start()
 			}
 
-			fmt.Fprint(ui.writer, ui.MakeUI(status))
+			_, err := fmt.Fprint(ui.writer, ui.MakeUI(status))
+			checkErr(err)
+			err = ui.writer.Flush()
+			checkErr(err)
 
 		} else {
 			fields := logrus.Fields{"path": status.Path}
 			switch status.Status {
-			case StatusError:
+			case concurrency.StatusError:
 				logrus.WithFields(fields).WithField("error", status.Err).Warn("error")
-			case StatusCloned:
+			case concurrency.StatusCloned:
 				logrus.WithFields(fields).Info("cloned")
-			case StatusFetched:
+			case concurrency.StatusFetched:
 				logrus.WithFields(fields).Debug("fetched")
-			case StatusUpToDate:
+			case concurrency.StatusUpToDate:
 				logrus.WithFields(fields).Debug("up to date")
 			}
 		}
+	}
+}
+
+func checkErr(err error) {
+	if err != nil {
+		logrus.Fatal(err)
 	}
 }

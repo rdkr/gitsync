@@ -4,23 +4,13 @@ package sync
 
 import (
 	"bytes"
-
+	"github.com/rdkr/gitsync/concurrency"
 	"gopkg.in/src-d/go-git.v4"
-	git_http "gopkg.in/src-d/go-git.v4/plumbing/transport/http"
+	githttp "gopkg.in/src-d/go-git.v4/plumbing/transport/http"
 )
 
-const (
-	StatusError = iota
-	StatusCloned
-	StatusFetched
-	StatusUpToDate
-)
-
-type Status struct {
-	Path   string
-	Status int
-	Output string
-	Err    error
+type GitSyncProject struct {
+	concurrency.Project
 }
 
 // Git interface for network operations
@@ -31,11 +21,11 @@ type Git interface {
 	Pull(*git.Worktree) (string, error)
 }
 
-func (p Project) PlainOpen() (*git.Repository, error) {
+func (p GitSyncProject) PlainOpen() (*git.Repository, error) {
 	return git.PlainOpen(p.Location)
 }
 
-func (p Project) PlainClone() (string, error) {
+func (p GitSyncProject) PlainClone() (string, error) {
 
 	var buf bytes.Buffer
 
@@ -48,7 +38,7 @@ func (p Project) PlainClone() (string, error) {
 	return buf.String(), err
 }
 
-func (p Project) Fetch(repo *git.Repository) (string, error) {
+func (p GitSyncProject) Fetch(repo *git.Repository) (string, error) {
 
 	var buf bytes.Buffer
 
@@ -60,7 +50,7 @@ func (p Project) Fetch(repo *git.Repository) (string, error) {
 	return buf.String(), err
 }
 
-func (p Project) Pull(worktree *git.Worktree) (string, error) {
+func (p GitSyncProject) Pull(worktree *git.Worktree) (string, error) {
 
 	var buf bytes.Buffer
 
@@ -72,9 +62,9 @@ func (p Project) Pull(worktree *git.Worktree) (string, error) {
 	return buf.String(), err
 }
 
-func (p Project) getAuth() *git_http.BasicAuth {
+func (p GitSyncProject) getAuth() *githttp.BasicAuth {
 	if p.Token != "" {
-		return &git_http.BasicAuth{
+		return &githttp.BasicAuth{
 			Username: "token",
 			Password: p.Token,
 		}

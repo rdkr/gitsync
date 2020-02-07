@@ -1,15 +1,29 @@
-package sync
+package concurrency
 
 import (
 	"sync"
 )
+
+const (
+	StatusError = iota
+	StatusCloned
+	StatusFetched
+	StatusUpToDate
+)
+
+type Status struct {
+	Path   string
+	Status int
+	Output string
+	Err    error
+}
 
 type ProviderProcessor interface {
 	GetGroups() []ProviderProcessor
 	GetProjects() []Project
 }
 
-type ConcurrencyManager struct {
+type Manager struct {
 	cfg Config
 
 	groups   chan ProviderProcessor
@@ -18,13 +32,12 @@ type ConcurrencyManager struct {
 	groupsWG, groupsSignalWG, projectsWG, projectsSignalWG *sync.WaitGroup
 	groupsSignalOnce, projectsSignalOnce                   *sync.Once
 
-	getItemsFromCfg ConfigParser
-	gitSync         GitSyncer
-	ui              UI
+	StatusChan    chan Status
+	projectAction func(Project) Status
 }
 
-func NewConcurrencyManager(cfg Config, ui UI, configParser ConfigParser, gitSync GitSyncer) ConcurrencyManager {
-	return ConcurrencyManager{
+func NewManager(cfg Config, projectAction func(Project) Status) Manager {
+	return Manager{
 		cfg:                cfg,
 		groups:             make(chan ProviderProcessor),
 		projects:           make(chan Project),
@@ -34,16 +47,15 @@ func NewConcurrencyManager(cfg Config, ui UI, configParser ConfigParser, gitSync
 		projectsWG:         new(sync.WaitGroup),
 		projectsSignalWG:   new(sync.WaitGroup),
 		projectsSignalOnce: new(sync.Once),
-		getItemsFromCfg:    configParser,
-		gitSync:            gitSync,
-		ui:                 ui,
+		StatusChan:         make(chan Status),
+		projectAction:      projectAction,
 	}
 }
 
-func (cm ConcurrencyManager) Start() {
+func (cm Manager) Start(groups []ProviderProcessor, projects []Project) {
 
 	var wg sync.WaitGroup
-	wg.Add(3)
+	wg.Add(2)
 
 	cm.groupsWG.Add(1)
 	cm.groupsSignalWG.Add(1)
@@ -54,15 +66,15 @@ func (cm ConcurrencyManager) Start() {
 	// groups manager goroutine
 	go func() {
 
-		// Start some groups processors
+		// start some groups processors
 		for w := 0; w < 10; w++ {
 			go cm.processGroups()
 		}
 
-		// wait for a signal that we have a group to process
+		// wait for a signal indicating that we have a group to process
 		cm.groupsSignalWG.Wait()
 
-		// wait to finish processing all groups
+		// wait to finish processing all groups before closing channel
 		cm.groupsWG.Wait()
 		close(cm.groups)
 
@@ -85,32 +97,25 @@ func (cm ConcurrencyManager) Start() {
 		// wait for a signal that we have a Project to process
 		cm.projectsSignalWG.Wait()
 
-		// wait to finish processing all projects
+		// wait to finish processing all projects before closing channel
 		cm.projectsWG.Wait()
 		close(cm.projects)
 
 		// ensure we have processed all projects before stopping the UI
-		close(cm.ui.StatusChan)
+		close(cm.StatusChan)
 
 		// stop the projects manager goroutine
 		wg.Done()
 
 	}()
 
-	// UI manager goroutine
-	go func() {
-
-		cm.ui.Run()
-		wg.Done()
-
-	}()
-
-	groups, projects := cm.getItemsFromCfg(cm.cfg)
-
 	for _, g := range groups {
 		cm.groupsWG.Add(1)
 		cm.groups <- g
 	}
+
+	cm.groupsWG.Done()
+	cm.groupsSignalOnce.Do(func() { cm.groupsSignalWG.Done() })
 
 	for _, p := range projects {
 		cm.projectsWG.Add(1)
@@ -121,16 +126,14 @@ func (cm ConcurrencyManager) Start() {
 		}(p)
 	}
 
-	cm.groupsWG.Done()
-	cm.groupsSignalOnce.Do(func() { cm.groupsSignalWG.Done() })
-
 	cm.projectsWG.Done()
 	cm.projectsSignalOnce.Do(func() { cm.projectsSignalWG.Done() })
 
 	wg.Wait()
+
 }
 
-func (cm ConcurrencyManager) processGroups() {
+func (cm Manager) processGroups() {
 	for {
 
 		parent, ok := <-cm.groups
@@ -162,7 +165,7 @@ func (cm ConcurrencyManager) processGroups() {
 	}
 }
 
-func (cm ConcurrencyManager) processProject() {
+func (cm Manager) processProject() {
 	for {
 
 		project, ok := <-cm.projects
@@ -170,7 +173,7 @@ func (cm ConcurrencyManager) processProject() {
 			break
 		}
 
-		cm.ui.StatusChan <- cm.gitSync(project, project.Location)
+		cm.StatusChan <- cm.projectAction(project)
 		cm.projectsWG.Done()
 	}
 }
