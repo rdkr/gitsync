@@ -3,9 +3,8 @@ package concurrency
 import (
 	"fmt"
 	"github.com/sirupsen/logrus"
-	"strings"
-
 	"github.com/xanzy/go-gitlab"
+	"strings"
 )
 
 type GitlabGroupProvider struct {
@@ -14,6 +13,33 @@ type GitlabGroupProvider struct {
 	RootFullPath string
 	Location     string
 	ID           int
+}
+
+type GitlabManager struct {
+	GroupChan   chan Status
+	ProjectChan chan Status
+	manager
+}
+
+func NewGitlabManager(projectAction func(Project) Status) GitlabManager {
+	return GitlabManager{
+		GroupChan:   make(chan Status),
+		ProjectChan: make(chan Status),
+		manager:     newManager(projectAction),
+	}
+}
+
+func (m GitlabManager) Start(groups []ProviderProcessor, projects []Project) {
+	m.start(
+		groups,
+		projects,
+		func() {
+			close(m.ProjectChan)
+		},
+		func(projectAction projectActionFunc, project Project) {
+			m.ProjectChan <- projectAction(project)
+		},
+	)
 }
 
 func (g *GitlabGroupProvider) GetGroups() []ProviderProcessor {

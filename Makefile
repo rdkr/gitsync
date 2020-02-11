@@ -3,4 +3,4 @@ test:
 	go test -race -v ./sync ./concurrency
 
 ui:
-	go run ui_tester.go
+	go run tests/ui/main.go

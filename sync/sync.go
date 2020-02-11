@@ -9,10 +9,10 @@ import (
 	"gopkg.in/src-d/go-git.v4"
 )
 
-type ConfigParser func(concurrency.Config) ([]concurrency.ProviderProcessor, []concurrency.Project)
+type ConfigParser func(Config) ([]concurrency.ProviderProcessor, []concurrency.Project)
 type GitSyncer func(Git, string) concurrency.Status
 
-func GetItemsFromCfg(cfg concurrency.Config) ([]concurrency.ProviderProcessor, []concurrency.Project) {
+func GetItemsFromCfg(cfg Config) ([]concurrency.ProviderProcessor, []concurrency.Project) {
 
 	var groups []concurrency.ProviderProcessor
 	var projects []concurrency.Project

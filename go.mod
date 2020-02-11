@@ -19,8 +19,8 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.6.2
-	github.com/xanzy/go-gitlab v0.23.0
-	golang.org/x/crypto v0.0.0-20200204104054-c9f3fb736b72
+	github.com/xanzy/go-gitlab v0.25.0
+	golang.org/x/crypto v0.0.0-20200210191831-6ca56c2f2e2b
 	golang.org/x/net v0.0.0-20200202094626-16171245cfb2 // indirect
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d // indirect
 	golang.org/x/sys v0.0.0-20200202164722-d101bd2416d5 // indirect

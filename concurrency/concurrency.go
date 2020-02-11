@@ -1,8 +1,12 @@
 package concurrency
 
-import (
-	"sync"
-)
+import "sync"
+
+type Project struct {
+	URL      string `yaml:"url"`
+	Location string `yaml:"location"`
+	Token    string `yaml:"token"`
+}
 
 const (
 	StatusError = iota
@@ -23,22 +27,21 @@ type ProviderProcessor interface {
 	GetProjects() []Project
 }
 
-type Manager struct {
-	cfg Config
+type projectActionFunc func(Project) Status
+type projectChanSenderFunc func(projectAction projectActionFunc, project Project)
 
+type manager struct {
 	groups   chan ProviderProcessor
 	projects chan Project
 
 	groupsWG, groupsSignalWG, projectsWG, projectsSignalWG *sync.WaitGroup
 	groupsSignalOnce, projectsSignalOnce                   *sync.Once
 
-	StatusChan    chan Status
-	projectAction func(Project) Status
+	projectAction projectActionFunc
 }
 
-func NewManager(cfg Config, projectAction func(Project) Status) Manager {
-	return Manager{
-		cfg:                cfg,
+func newManager(projectAction func(Project) Status) manager {
+	return manager{
 		groups:             make(chan ProviderProcessor),
 		projects:           make(chan Project),
 		groupsWG:           new(sync.WaitGroup),
@@ -47,39 +50,38 @@ func NewManager(cfg Config, projectAction func(Project) Status) Manager {
 		projectsWG:         new(sync.WaitGroup),
 		projectsSignalWG:   new(sync.WaitGroup),
 		projectsSignalOnce: new(sync.Once),
-		StatusChan:         make(chan Status),
 		projectAction:      projectAction,
 	}
 }
 
-func (cm Manager) Start(groups []ProviderProcessor, projects []Project) {
+func (m manager) start(groups []ProviderProcessor, projects []Project, projectsChanCloser func(), projectsChanSender projectChanSenderFunc) {
 
 	var wg sync.WaitGroup
 	wg.Add(2)
 
-	cm.groupsWG.Add(1)
-	cm.groupsSignalWG.Add(1)
+	m.groupsWG.Add(1)
+	m.groupsSignalWG.Add(1)
 
-	cm.projectsWG.Add(2)
-	cm.projectsSignalWG.Add(1)
+	m.projectsWG.Add(2)
+	m.projectsSignalWG.Add(1)
 
 	// groups manager goroutine
 	go func() {
 
 		// start some groups processors
 		for w := 0; w < 10; w++ {
-			go cm.processGroups()
+			go m.processGroups()
 		}
 
 		// wait for a signal indicating that we have a group to process
-		cm.groupsSignalWG.Wait()
+		m.groupsSignalWG.Wait()
 
 		// wait to finish processing all groups before closing channel
-		cm.groupsWG.Wait()
-		close(cm.groups)
+		m.groupsWG.Wait()
+		close(m.groups)
 
 		// ensure we have processed all groups before stopping on projects
-		cm.projectsWG.Done()
+		m.projectsWG.Done()
 
 		// stop the groups manager goroutine
 		wg.Done()
@@ -91,18 +93,18 @@ func (cm Manager) Start(groups []ProviderProcessor, projects []Project) {
 
 		// Start some projects processors
 		for w := 0; w < 20; w++ {
-			go cm.processProject()
+			go m.processProject(projectsChanSender)
 		}
 
 		// wait for a signal that we have a Project to process
-		cm.projectsSignalWG.Wait()
+		m.projectsSignalWG.Wait()
 
 		// wait to finish processing all projects before closing channel
-		cm.projectsWG.Wait()
-		close(cm.projects)
+		m.projectsWG.Wait()
+		close(m.projects)
 
 		// ensure we have processed all projects before stopping the UI
-		close(cm.StatusChan)
+		projectsChanCloser()
 
 		// stop the projects manager goroutine
 		wg.Done()
@@ -110,33 +112,33 @@ func (cm Manager) Start(groups []ProviderProcessor, projects []Project) {
 	}()
 
 	for _, g := range groups {
-		cm.groupsWG.Add(1)
-		cm.groups <- g
+		m.groupsWG.Add(1)
+		m.groups <- g
 	}
 
-	cm.groupsWG.Done()
-	cm.groupsSignalOnce.Do(func() { cm.groupsSignalWG.Done() })
+	m.groupsWG.Done()
+	m.groupsSignalOnce.Do(func() { m.groupsSignalWG.Done() })
 
 	for _, p := range projects {
-		cm.projectsWG.Add(1)
-		cm.projectsSignalOnce.Do(func() { cm.projectsSignalWG.Done() })
+		m.projectsWG.Add(1)
+		m.projectsSignalOnce.Do(func() { m.projectsSignalWG.Done() })
 
 		go func(project Project) {
-			cm.projects <- project
+			m.projects <- project
 		}(p)
 	}
 
-	cm.projectsWG.Done()
-	cm.projectsSignalOnce.Do(func() { cm.projectsSignalWG.Done() })
+	m.projectsWG.Done()
+	m.projectsSignalOnce.Do(func() { m.projectsSignalWG.Done() })
 
 	wg.Wait()
 
 }
 
-func (cm Manager) processGroups() {
+func (m manager) processGroups() {
 	for {
 
-		parent, ok := <-cm.groups
+		parent, ok := <-m.groups
 		if !ok {
 			break
 		}
@@ -144,36 +146,36 @@ func (cm Manager) processGroups() {
 		childGroups := parent.GetGroups()
 
 		for _, child := range childGroups {
-			cm.groupsWG.Add(1)
-			cm.groupsSignalOnce.Do(func() { cm.groupsSignalWG.Done() })
+			m.groupsWG.Add(1)
+			m.groupsSignalOnce.Do(func() { m.groupsSignalWG.Done() })
 			go func(group ProviderProcessor) {
-				cm.groups <- group
+				m.groups <- group
 			}(child)
 		}
 
 		childProjects := parent.GetProjects()
 
 		for _, child := range childProjects {
-			cm.projectsWG.Add(1)
-			cm.projectsSignalOnce.Do(func() { cm.projectsSignalWG.Done() })
+			m.projectsWG.Add(1)
+			m.projectsSignalOnce.Do(func() { m.projectsSignalWG.Done() })
 			go func(project Project) {
-				cm.projects <- project
+				m.projects <- project
 			}(child)
 		}
 
-		cm.groupsWG.Done()
+		m.groupsWG.Done()
 	}
 }
 
-func (cm Manager) processProject() {
+func (m manager) processProject(projectsChanSender projectChanSenderFunc) {
 	for {
 
-		project, ok := <-cm.projects
+		project, ok := <-m.projects
 		if !ok {
 			break
 		}
 
-		cm.StatusChan <- cm.projectAction(project)
-		cm.projectsWG.Done()
+		projectsChanSender(m.projectAction, project)
+		m.projectsWG.Done()
 	}
 }

@@ -14,7 +14,7 @@ import (
 var cfgFile string
 var verbose bool
 var debug bool
-var cfg concurrency.Config
+var cfg sync.Config
 
 const usage = `gitsync is a tool to keep local Git repos in sync with remote Git hosts.
 
@@ -32,7 +32,7 @@ Groups are recursed to find projects. Projects are concurrently synced, i.e:
 A .yaml config file is expected, The format of the config file is:
 
 gitlab:       # optional: defines GitLab resources
-  token:        # required: a GitLab API token
+  token:        # optional: a GitLab API token
   groups:       # optional: defines GitLab groups
   - group:        # required: group ID number
     location:     # required: local path to sync to
@@ -64,12 +64,12 @@ var rootCmd = &cobra.Command{
 		go ui.Run()
 
 		// create and run concurrency with gitsync
-		cm := concurrency.NewManager(cfg, sync.GitSyncHelper)
+		cm := concurrency.NewGitlabManager(sync.GitSyncHelper)
 		go cm.Start(sync.GetItemsFromCfg(cfg))
 
 		// hook ui into cm
 		for {
-			status, ok := <-cm.StatusChan
+			status, ok := <-cm.ProjectChan
 			if !ok {
 				break
 			}

@@ -2,6 +2,7 @@ package concurrency_test
 
 import (
 	"github.com/rdkr/gitsync/concurrency"
+	"github.com/rdkr/gitsync/sync"
 	"testing"
 )
 
@@ -20,11 +21,11 @@ func (g *testGroupProvider) GetProjects() []concurrency.Project {
 
 var concurrencyTests = []struct {
 	name                string
-	mockGetItemsFromCfg func(concurrency.Config) ([]concurrency.ProviderProcessor, []concurrency.Project)
+	mockGetItemsFromCfg func(sync.Config) ([]concurrency.ProviderProcessor, []concurrency.Project)
 }{
 	{
 		name: "NoGroupsNoProjects",
-		mockGetItemsFromCfg: func(concurrency.Config) ([]concurrency.ProviderProcessor, []concurrency.Project) {
+		mockGetItemsFromCfg: func(sync.Config) ([]concurrency.ProviderProcessor, []concurrency.Project) {
 			var groups []concurrency.ProviderProcessor
 			var projects []concurrency.Project
 			return groups, projects
@@ -32,7 +33,7 @@ var concurrencyTests = []struct {
 	},
 	{
 		name: "NoGroupsAProject",
-		mockGetItemsFromCfg: func(concurrency.Config) ([]concurrency.ProviderProcessor, []concurrency.Project) {
+		mockGetItemsFromCfg: func(sync.Config) ([]concurrency.ProviderProcessor, []concurrency.Project) {
 			var groups []concurrency.ProviderProcessor
 			projects := []concurrency.Project{
 				{URL: "a", Location: "b", Token: "c"},
@@ -42,7 +43,7 @@ var concurrencyTests = []struct {
 	},
 	{
 		name: "EmptyGroupNoProject",
-		mockGetItemsFromCfg: func(concurrency.Config) ([]concurrency.ProviderProcessor, []concurrency.Project) {
+		mockGetItemsFromCfg: func(sync.Config) ([]concurrency.ProviderProcessor, []concurrency.Project) {
 			groups := []concurrency.ProviderProcessor{
 				&testGroupProvider{children: nil, projects: nil},
 			}
@@ -52,7 +53,7 @@ var concurrencyTests = []struct {
 	},
 	{
 		name: "EmptyGroupAProject",
-		mockGetItemsFromCfg: func(concurrency.Config) ([]concurrency.ProviderProcessor, []concurrency.Project) {
+		mockGetItemsFromCfg: func(sync.Config) ([]concurrency.ProviderProcessor, []concurrency.Project) {
 			groups := []concurrency.ProviderProcessor{
 				&testGroupProvider{children: nil, projects: nil},
 			}
@@ -64,7 +65,7 @@ var concurrencyTests = []struct {
 	},
 	{
 		name: "NestedGroupNoProject",
-		mockGetItemsFromCfg: func(concurrency.Config) ([]concurrency.ProviderProcessor, []concurrency.Project) {
+		mockGetItemsFromCfg: func(sync.Config) ([]concurrency.ProviderProcessor, []concurrency.Project) {
 			groups := []concurrency.ProviderProcessor{
 				&testGroupProvider{
 					children: []concurrency.ProviderProcessor{
@@ -81,7 +82,7 @@ var concurrencyTests = []struct {
 	},
 	{
 		name: "NestedGroupAProject",
-		mockGetItemsFromCfg: func(concurrency.Config) ([]concurrency.ProviderProcessor, []concurrency.Project) {
+		mockGetItemsFromCfg: func(sync.Config) ([]concurrency.ProviderProcessor, []concurrency.Project) {
 			groups := []concurrency.ProviderProcessor{
 				&testGroupProvider{
 					children: []concurrency.ProviderProcessor{
@@ -105,9 +106,9 @@ func TestConcurrency(t *testing.T) {
 	for _, tc := range concurrencyTests {
 		t.Run(tc.name, func(t *testing.T) {
 
-			groups, projects := tc.mockGetItemsFromCfg(concurrency.Config{})
+			groups, projects := tc.mockGetItemsFromCfg(sync.Config{})
 
-			m := concurrency.NewManager(concurrency.Config{}, func(project concurrency.Project) concurrency.Status {
+			m := concurrency.NewGitlabManager(func(project concurrency.Project) concurrency.Status {
 				return concurrency.Status{
 					Path:   "none",
 					Status: 0,
@@ -119,7 +120,7 @@ func TestConcurrency(t *testing.T) {
 			go m.Start(groups, projects)
 
 			for {
-				_, ok := <-m.StatusChan
+				_, ok := <-m.ProjectChan
 				if !ok {
 					break
 				}
