@@ -21,7 +21,7 @@ type GitlabManager struct {
 	manager
 }
 
-func NewGitlabManager(projectAction func(Project) Status) GitlabManager {
+func NewGitlabManager(projectAction projectActionFunc) GitlabManager {
 	return GitlabManager{
 		GroupChan:   make(chan Status),
 		ProjectChan: make(chan Status),
@@ -29,17 +29,16 @@ func NewGitlabManager(projectAction func(Project) Status) GitlabManager {
 	}
 }
 
+func (m GitlabManager) projectChanSender(projectAction projectActionFunc, project Project) {
+	m.ProjectChan <- projectAction(project)
+}
+
+func (m GitlabManager) projectsChanCloser(){
+	close(m.ProjectChan)
+}
+
 func (m GitlabManager) Start(groups []ProviderProcessor, projects []Project) {
-	m.start(
-		groups,
-		projects,
-		func() {
-			close(m.ProjectChan)
-		},
-		func(projectAction projectActionFunc, project Project) {
-			m.ProjectChan <- projectAction(project)
-		},
-	)
+	m.start(groups, projects, m.projectChanSender, m.projectsChanCloser)
 }
 
 func (g *GitlabGroupProvider) GetGroups() []ProviderProcessor {

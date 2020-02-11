@@ -6,21 +6,21 @@ type Project struct {
 	URL      string `yaml:"url"`
 	Location string `yaml:"location"`
 	Token    string `yaml:"token"`
-}
+} // TODO move git specific stuff to sync module
 
 const (
 	StatusError = iota
 	StatusCloned
 	StatusFetched
 	StatusUpToDate
-)
+) // TODO move git specific stuff to sync module
 
 type Status struct {
 	Path   string
 	Status int
 	Output string
 	Err    error
-}
+} // TODO move git specific stuff to sync module
 
 type ProviderProcessor interface {
 	GetGroups() []ProviderProcessor
@@ -29,6 +29,7 @@ type ProviderProcessor interface {
 
 type projectActionFunc func(Project) Status
 type projectChanSenderFunc func(projectAction projectActionFunc, project Project)
+type projectsChanCloserFunc func()
 
 type manager struct {
 	groups   chan ProviderProcessor
@@ -54,7 +55,7 @@ func newManager(projectAction func(Project) Status) manager {
 	}
 }
 
-func (m manager) start(groups []ProviderProcessor, projects []Project, projectsChanCloser func(), projectsChanSender projectChanSenderFunc) {
+func (m manager) start(groups []ProviderProcessor, projects []Project, projectsChanSender projectChanSenderFunc,  projectsChanCloser projectsChanCloserFunc) {
 
 	var wg sync.WaitGroup
 	wg.Add(2)
