@@ -12,7 +12,9 @@ import (
 
 func main() {
 
-	statuses := 200
+	statuses := 10
+	delayTime := time.Millisecond //* 2000
+
 	ui := gs.NewUI(true, false, false)
 
 	wg := sync.WaitGroup{}
@@ -24,7 +26,7 @@ func main() {
 	}()
 	go func() {
 		for i := 0; i < statuses; i++ {
-			time.Sleep(time.Millisecond * 10)
+			time.Sleep(delayTime)
 			ui.StatusChan <- getStatus(i)
 			wg.Done()
 		}

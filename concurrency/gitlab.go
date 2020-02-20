@@ -33,7 +33,7 @@ func (m GitlabManager) projectChanSender(projectAction projectActionFunc, projec
 	m.ProjectChan <- projectAction(project)
 }
 
-func (m GitlabManager) projectsChanCloser(){
+func (m GitlabManager) projectsChanCloser() {
 	close(m.ProjectChan)
 }
 

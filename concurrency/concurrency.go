@@ -55,7 +55,7 @@ func newManager(projectAction func(Project) Status) manager {
 	}
 }
 
-func (m manager) start(groups []ProviderProcessor, projects []Project, projectsChanSender projectChanSenderFunc,  projectsChanCloser projectsChanCloserFunc) {
+func (m manager) start(groups []ProviderProcessor, projects []Project, projectsChanSender projectChanSenderFunc, projectsChanCloser projectsChanCloserFunc) {
 
 	var wg sync.WaitGroup
 	wg.Add(2)

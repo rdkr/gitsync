@@ -3,18 +3,19 @@ package main
 import (
 	"github.com/mitchellh/go-homedir"
 	"github.com/rdkr/gitsync/concurrency"
-	"github.com/rdkr/gitsync/sync"
+	gitsync "github.com/rdkr/gitsync/sync"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"golang.org/x/crypto/ssh/terminal"
 	"os"
+	"sync"
 )
 
 var cfgFile string
 var verbose bool
 var debug bool
-var cfg sync.Config
+var cfg gitsync.Config
 
 const usage = `gitsync is a tool to keep local Git repos in sync with remote Git hosts.
 
@@ -58,24 +59,44 @@ var rootCmd = &cobra.Command{
 	Long:  usage,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		// create and run ui
+		// create ui
 		isTerminal := terminal.IsTerminal(int(os.Stdout.Fd()))
-		ui := sync.NewUI(isTerminal, verbose, debug)
-		go ui.Run()
+		ui := gitsync.NewUI(isTerminal, verbose, debug)
 
-		// create and run concurrency with gitsync
-		cm := concurrency.NewGitlabManager(sync.GitSyncHelper)
-		go cm.Start(sync.GetItemsFromCfg(cfg))
+		// create concurrency manager
+		cm := concurrency.NewGitlabManager(gitsync.GitSyncHelper)
 
-		// hook ui into cm
-		for {
-			status, ok := <-cm.ProjectChan
-			if !ok {
-				break
+		// create wait group to manage the above
+		wg := sync.WaitGroup{}
+		wg.Add(3)
+
+		// start concurrency manager
+		go func() {
+			cm.Start(gitsync.GetItemsFromCfg(cfg))
+			wg.Done()
+		}()
+
+		// start ui
+		go func() {
+			ui.Run()
+			wg.Done()
+		}()
+
+		// connect cm and ui
+		go func() {
+			for {
+				status, ok := <-cm.ProjectChan
+				if !ok {
+					break
+				}
+				ui.StatusChan <- status
 			}
-			ui.StatusChan <- status
-		}
+			close(ui.StatusChan)
+			wg.Done()
+		}()
 
+		// wait until all the above are done before exiting
+		wg.Wait()
 	},
 }
 
