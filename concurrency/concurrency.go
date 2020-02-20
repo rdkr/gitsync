@@ -70,7 +70,7 @@ func (m manager) start(groups []ProviderProcessor, projects []Project, projectsC
 	go func() {
 
 		// start some groups processors
-		for w := 0; w < 10; w++ {
+		for w := 0; w < 25; w++ {
 			go m.processGroups()
 		}
 
@@ -93,7 +93,7 @@ func (m manager) start(groups []ProviderProcessor, projects []Project, projectsC
 	go func() {
 
 		// Start some projects processors
-		for w := 0; w < 20; w++ {
+		for w := 0; w < 50; w++ {
 			go m.processProject(projectsChanSender)
 		}
 
