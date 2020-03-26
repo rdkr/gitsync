@@ -1,6 +1,9 @@
 package main
 
 import (
+	"os"
+	"sync"
+
 	"github.com/mitchellh/go-homedir"
 	"github.com/rdkr/gitsync/concurrency"
 	gitsync "github.com/rdkr/gitsync/sync"
@@ -8,8 +11,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"golang.org/x/crypto/ssh/terminal"
-	"os"
-	"sync"
 )
 
 var cfgFile string
@@ -64,7 +65,8 @@ var rootCmd = &cobra.Command{
 		ui := gitsync.NewUI(isTerminal, verbose, debug)
 
 		// create concurrency manager
-		cm := concurrency.NewGitlabManager(gitsync.GitSyncHelper)
+		gl := concurrency.NewGitlabManager(gitsync.GitSyncHelper)
+		gh := concurrency.NewGithubManager(gitsync.GitSyncHelper)
 
 		// create wait group to manage the above
 		wg := sync.WaitGroup{}
@@ -89,7 +91,8 @@ var rootCmd = &cobra.Command{
 				if !ok {
 					break
 				}
-				ui.StatusChan <- status
+				s, _ := status.(gitsync.Status)
+				ui.StatusChan <- s
 			}
 			close(ui.StatusChan)
 			wg.Done()

@@ -1,8 +1,9 @@
 package concurrency_test
 
 import (
-	"github.com/rdkr/gitsync/concurrency"
 	"testing"
+
+	"github.com/rdkr/gitsync/concurrency"
 )
 
 type testGroupProvider struct {
@@ -107,13 +108,8 @@ func TestConcurrency(t *testing.T) {
 
 			groups, projects := tc.mockGetItemsFromCfg()
 
-			m := concurrency.NewGitlabManager(func(project concurrency.Project) concurrency.Status {
-				return concurrency.Status{
-					Path:   "none",
-					Status: 0,
-					Output: "ok",
-					Err:    nil,
-				}
+			m := concurrency.NewGitlabManager(func(project concurrency.Project) interface{} {
+				return nil
 			})
 
 			go m.Start(groups, projects)

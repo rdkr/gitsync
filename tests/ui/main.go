@@ -2,7 +2,7 @@ package main
 
 import (
 	"errors"
-	"github.com/rdkr/gitsync/concurrency"
+
 	gs "github.com/rdkr/gitsync/sync"
 
 	"math/rand"
@@ -38,12 +38,12 @@ func main() {
 
 }
 
-func getStatus(i int) concurrency.Status {
-	statuses := []concurrency.Status{
-		{"testpath1", concurrency.StatusError, "", errors.New("o no")},
-		{"testpath2", concurrency.StatusFetched, "", nil},
-		{"testpath3", concurrency.StatusCloned, "", nil},
-		{"testpath4", concurrency.StatusUpToDate, "", nil},
+func getStatus(i int) gs.Status {
+	statuses := []gs.Status{
+		{"testpath1", gs.StatusError, "", errors.New("o no")},
+		{"testpath2", gs.StatusFetched, "", nil},
+		{"testpath3", gs.StatusCloned, "", nil},
+		{"testpath4", gs.StatusUpToDate, "", nil},
 	}
 	s := rand.NewSource(int64(1337 + i))
 	r := rand.New(s)

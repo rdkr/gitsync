@@ -8,26 +8,12 @@ type Project struct {
 	Token    string `yaml:"token"`
 } // TODO move git specific stuff to sync module
 
-const (
-	StatusError = iota
-	StatusCloned
-	StatusFetched
-	StatusUpToDate
-) // TODO move git specific stuff to sync module
-
-type Status struct {
-	Path   string
-	Status int
-	Output string
-	Err    error
-} // TODO move git specific stuff to sync module
-
 type ProviderProcessor interface {
 	GetGroups() []ProviderProcessor
 	GetProjects() []Project
 }
 
-type projectActionFunc func(Project) Status
+type projectActionFunc func(Project) interface{}
 type projectChanSenderFunc func(projectAction projectActionFunc, project Project)
 type projectsChanCloserFunc func()
 
@@ -41,7 +27,7 @@ type manager struct {
 	projectAction projectActionFunc
 }
 
-func newManager(projectAction func(Project) Status) manager {
+func newManager(projectAction projectActionFunc) manager {
 	return manager{
 		groups:             make(chan ProviderProcessor),
 		projects:           make(chan Project),

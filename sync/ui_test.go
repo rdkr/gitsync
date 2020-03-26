@@ -2,10 +2,10 @@ package sync_test
 
 import (
 	"errors"
-	"github.com/rdkr/gitsync/concurrency"
-	gs "github.com/rdkr/gitsync/sync"
 	"sync"
 	"testing"
+
+	gs "github.com/rdkr/gitsync/sync"
 )
 
 func TestShouldBeVerbose(t *testing.T) {
@@ -87,11 +87,11 @@ func testUI(verbose, debug bool) {
 
 }
 
-func getStatuses() []concurrency.Status {
-	return []concurrency.Status{
-		{"testpath1", concurrency.StatusError, "", errors.New("o no")},
-		{"testpath2", concurrency.StatusFetched, "", nil},
-		{"testpath3", concurrency.StatusCloned, "", nil},
-		{"testpath4", concurrency.StatusUpToDate, "", nil},
+func getStatuses() []gs.Status {
+	return []gs.Status{
+		{"testpath1", gs.StatusError, "", errors.New("o no")},
+		{"testpath2", gs.StatusFetched, "", nil},
+		{"testpath3", gs.StatusCloned, "", nil},
+		{"testpath4", gs.StatusUpToDate, "", nil},
 	}
 }

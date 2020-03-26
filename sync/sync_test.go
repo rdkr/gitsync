@@ -2,6 +2,9 @@ package sync_test
 
 import (
 	"errors"
+	"testing"
+	"time"
+
 	"github.com/go-test/deep"
 	"github.com/golang/mock/gomock"
 	"github.com/rdkr/gitsync/concurrency"
@@ -11,14 +14,12 @@ import (
 	"gopkg.in/src-d/go-git.v4"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 	"gopkg.in/src-d/go-git.v4/storage/memory"
-	"testing"
-	"time"
 )
 
 var syncTests = []struct {
 	name     string
 	setup    func(*mocks.MockGit) *mocks.MockGit
-	expected concurrency.Status
+	expected sync.Status
 }{
 	{
 		name: "cloneSuccess",
@@ -27,7 +28,7 @@ var syncTests = []struct {
 			mockGit.EXPECT().PlainClone().Return("", nil)
 			return mockGit
 		},
-		expected: concurrency.Status{"somewhere", concurrency.StatusCloned, "", nil},
+		expected: sync.Status{"somewhere", sync.StatusCloned, "", nil},
 	},
 	{
 		name: "cloneFail",
@@ -36,7 +37,7 @@ var syncTests = []struct {
 			mockGit.EXPECT().PlainClone().Return("", errors.New("uh oh"))
 			return mockGit
 		},
-		expected: concurrency.Status{"somewhere", concurrency.StatusError, "", errors.New("unable to clone repo: uh oh")},
+		expected: sync.Status{"somewhere", sync.StatusError, "", errors.New("unable to clone repo: uh oh")},
 	},
 	{
 		name: "openFail",
@@ -44,7 +45,7 @@ var syncTests = []struct {
 			mockGit.EXPECT().PlainOpen().Return(nil, errors.New("uh oh"))
 			return mockGit
 		},
-		expected: concurrency.Status{"somewhere", concurrency.StatusError, "", errors.New("unable to open repo: uh oh")},
+		expected: sync.Status{"somewhere", sync.StatusError, "", errors.New("unable to open repo: uh oh")},
 	},
 	{
 		name: "workTreeFail",
@@ -61,7 +62,7 @@ var syncTests = []struct {
 			return mockGit
 
 		},
-		expected: concurrency.Status{"somewhere", concurrency.StatusError, "", errors.New("unable to get worktree: worktree not available in a bare repository")},
+		expected: sync.Status{"somewhere", sync.StatusError, "", errors.New("unable to get worktree: worktree not available in a bare repository")},
 	},
 	{
 		name: "headFail",
@@ -83,7 +84,7 @@ var syncTests = []struct {
 			return mockGit
 
 		},
-		expected: concurrency.Status{"somewhere", concurrency.StatusError, "", errors.New("unable to get head: reference not found")},
+		expected: sync.Status{"somewhere", sync.StatusError, "", errors.New("unable to get head: reference not found")},
 	},
 	{
 		name: "fetchSuccess",
@@ -107,7 +108,7 @@ var syncTests = []struct {
 			return mockGit
 
 		},
-		expected: concurrency.Status{Path: "somewhere", Status: concurrency.StatusError, Err: errors.New("not on master branch but fetched")},
+		expected: sync.Status{Path: "somewhere", Status: sync.StatusError, Err: errors.New("not on master branch but fetched")},
 	},
 	{
 		name: "fetchFail",
@@ -131,7 +132,7 @@ var syncTests = []struct {
 			return mockGit
 
 		},
-		expected: concurrency.Status{Path: "somewhere", Status: concurrency.StatusError, Err: errors.New("not on master branch and: uh oh")},
+		expected: sync.Status{Path: "somewhere", Status: sync.StatusError, Err: errors.New("not on master branch and: uh oh")},
 	},
 	{
 		name: "pullSuccess",
@@ -150,7 +151,7 @@ var syncTests = []struct {
 			return mockGit
 
 		},
-		expected: concurrency.Status{Path: "somewhere", Status: concurrency.StatusFetched, Err: nil},
+		expected: sync.Status{Path: "somewhere", Status: sync.StatusFetched, Err: nil},
 	},
 	{
 		name: "pullUpToDate",
@@ -169,7 +170,7 @@ var syncTests = []struct {
 			return mockGit
 
 		},
-		expected: concurrency.Status{Path: "somewhere", Status: concurrency.StatusUpToDate, Err: nil},
+		expected: sync.Status{Path: "somewhere", Status: sync.StatusUpToDate, Err: nil},
 	},
 	{
 		name: "pullFail",
@@ -188,7 +189,7 @@ var syncTests = []struct {
 			return mockGit
 
 		},
-		expected: concurrency.Status{Path: "somewhere", Status: concurrency.StatusError, Err: errors.New("unable to pull master: uh oh")},
+		expected: sync.Status{Path: "somewhere", Status: sync.StatusError, Err: errors.New("unable to pull master: uh oh")},
 	},
 }
 
@@ -222,7 +223,7 @@ type mockGit struct {
 	*mocks.MockGit
 }
 
-func gitSyncHelper(g concurrency.Project, mg *mocks.MockGit) concurrency.Status {
+func gitSyncHelper(g concurrency.Project, mg *mocks.MockGit) sync.Status {
 	return sync.GitSync(g, func(concurrency.Project) sync.Git {
 		return mockGit{g, mg}
 	})

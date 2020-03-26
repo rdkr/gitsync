@@ -2,9 +2,10 @@ package concurrency
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/sirupsen/logrus"
 	"github.com/xanzy/go-gitlab"
-	"strings"
 )
 
 type GitlabGroupProvider struct {
@@ -16,15 +17,15 @@ type GitlabGroupProvider struct {
 }
 
 type GitlabManager struct {
-	GroupChan   chan Status
-	ProjectChan chan Status
+	GroupChan   chan error
+	ProjectChan chan interface{}
 	manager
 }
 
 func NewGitlabManager(projectAction projectActionFunc) GitlabManager {
 	return GitlabManager{
-		GroupChan:   make(chan Status),
-		ProjectChan: make(chan Status),
+		GroupChan:   make(chan error),
+		ProjectChan: make(chan interface{}),
 		manager:     newManager(projectAction),
 	}
 }
