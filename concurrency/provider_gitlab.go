@@ -31,7 +31,7 @@ func (m GitlabManager) projectsChanCloser() {
 }
 
 func (m GitlabManager) Start(users []User, groups []Group, projects []Project) {
-	m.start(groups, projects, m.projectChanSender, m.projectsChanCloser)
+	m.start(users, groups, projects, m.projectChanSender, m.projectsChanCloser)
 }
 
 type GitlabGroup struct {
@@ -58,7 +58,7 @@ func (g *GitlabGroup) GetGroups() []Group {
 		AllAvailable: gitlab.Bool(true),
 	})
 	if err != nil {
-		panic(err)
+		logrus.Fatal(err)
 	}
 
 	for _, child := range groups {
@@ -75,7 +75,7 @@ func (g *GitlabGroup) GetProjects() []Project {
 		Archived: gitlab.Bool(false),
 	})
 	if err != nil {
-		panic(err)
+		logrus.Fatal(err)
 	}
 
 	for _, p := range projects {

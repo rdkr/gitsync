@@ -1,7 +1,10 @@
 package concurrency
 
 import (
+	"context"
+
 	"github.com/google/go-github/v30/github"
+	"github.com/sirupsen/logrus"
 )
 
 type GithubManager struct {
@@ -27,32 +30,29 @@ func (m GithubManager) projectsChanCloser() {
 }
 
 func (m GithubManager) Start(users []User, groups []Group, projects []Project) {
-	m.start(groups, projects, m.projectChanSender, m.projectsChanCloser)
+	m.start(users, groups, projects, m.projectChanSender, m.projectsChanCloser)
 }
 
 type GithubUser struct {
-	Client *github.Client
-	Name   string
+	Client   *github.Client
+	Name     string
+	Location string
+	Token    string
 }
 
-func (g *GithubUser) GetProjects() []Project {
+func (u *GithubUser) GetProjects() []Project {
 	var result []Project
 
-	// projects, _, err := g.Client.Groups.ListGroupProjects(g.ID, &github.ListGroupProjectsOptions{
-	// 	Archived: github.Bool(false),
-	// })
-	// if err != nil {
-	// 	panic(err)
-	// }
+	logrus.Debug("getting projects")
 
-	// for _, p := range projects {
+	projects, _, err := u.Client.Repositories.List(context.Background(), u.Name, &github.RepositoryListOptions{})
+	if err != nil {
+		logrus.Fatal(err)
+	}
 
-	// 	path := strings.ReplaceAll(p.PathWithNamespace, g.RootFullPath, "")
-	// 	path = strings.TrimLeft(path, "/")
-	// 	path = fmt.Sprintf("%s/%s", g.Location, path)
-
-	// 	result = append(result, Project{p.HTTPURLToRepo, path, g.Token})
-	// }
+	for _, p := range projects {
+		result = append(result, Project{*p.CloneURL, u.Location + "/" + *p.Name, u.Token})
+	}
 
 	return result
 }

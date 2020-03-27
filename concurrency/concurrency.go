@@ -24,19 +24,24 @@ type projectChanSenderFunc func(projectAction projectActionFunc, project Project
 type projectsChanCloserFunc func()
 
 type manager struct {
+	users    chan User
 	groups   chan Group
 	projects chan Project
 
-	groupsWG, groupsSignalWG, projectsWG, projectsSignalWG *sync.WaitGroup
-	groupsSignalOnce, projectsSignalOnce                   *sync.Once
+	usersWG, usersSignalWG, groupsWG, groupsSignalWG, projectsWG, projectsSignalWG *sync.WaitGroup
+	usersSignalOnce, groupsSignalOnce, projectsSignalOnce                          *sync.Once
 
 	projectAction projectActionFunc
 }
 
 func newManager(projectAction projectActionFunc) manager {
 	return manager{
+		users:              make(chan User),
 		groups:             make(chan Group),
 		projects:           make(chan Project),
+		usersWG:            new(sync.WaitGroup),
+		usersSignalWG:      new(sync.WaitGroup),
+		usersSignalOnce:    new(sync.Once),
 		groupsWG:           new(sync.WaitGroup),
 		groupsSignalWG:     new(sync.WaitGroup),
 		groupsSignalOnce:   new(sync.Once),
@@ -47,16 +52,42 @@ func newManager(projectAction projectActionFunc) manager {
 	}
 }
 
-func (m manager) start(groups []Group, projects []Project, projectsChanSender projectChanSenderFunc, projectsChanCloser projectsChanCloserFunc) {
+func (m manager) start(users []User, groups []Group, projects []Project, projectsChanSender projectChanSenderFunc, projectsChanCloser projectsChanCloserFunc) {
 
 	var wg sync.WaitGroup
-	wg.Add(2)
+	wg.Add(3)
+
+	m.usersWG.Add(1)
+	m.usersSignalWG.Add(1)
 
 	m.groupsWG.Add(1)
 	m.groupsSignalWG.Add(1)
 
-	m.projectsWG.Add(2)
+	m.projectsWG.Add(3)
 	m.projectsSignalWG.Add(1)
+
+	// groups manager goroutine
+	go func() {
+
+		// start some groups processors
+		for w := 0; w < 5; w++ {
+			go m.processUsers()
+		}
+
+		// wait for a signal indicating that we have a group to process
+		m.usersSignalWG.Wait()
+
+		// wait to finish processing all groups before closing channel
+		m.usersWG.Wait()
+		close(m.users)
+
+		// ensure we have processed all groups before stopping on projects
+		m.projectsWG.Done()
+
+		// stop the groups manager goroutine
+		wg.Done()
+
+	}()
 
 	// groups manager goroutine
 	go func() {
@@ -104,11 +135,17 @@ func (m manager) start(groups []Group, projects []Project, projectsChanSender pr
 
 	}()
 
+	for _, u := range users {
+		m.usersWG.Add(1)
+		m.users <- u
+	}
+	m.usersWG.Done()
+	m.usersSignalOnce.Do(func() { m.usersSignalWG.Done() })
+
 	for _, g := range groups {
 		m.groupsWG.Add(1)
 		m.groups <- g
 	}
-
 	m.groupsWG.Done()
 	m.groupsSignalOnce.Do(func() { m.groupsSignalWG.Done() })
 
@@ -120,12 +157,32 @@ func (m manager) start(groups []Group, projects []Project, projectsChanSender pr
 			m.projects <- project
 		}(p)
 	}
-
 	m.projectsWG.Done()
 	m.projectsSignalOnce.Do(func() { m.projectsSignalWG.Done() })
 
 	wg.Wait()
 
+}
+
+func (m manager) processUsers() {
+	for {
+
+		user, ok := <-m.users
+		if !ok {
+			break
+		}
+
+		childProjects := user.GetProjects()
+		for _, child := range childProjects {
+			m.projectsWG.Add(1)
+			m.projectsSignalOnce.Do(func() { m.projectsSignalWG.Done() })
+			go func(project Project) {
+				m.projects <- project
+			}(child)
+		}
+
+		m.usersWG.Done()
+	}
 }
 
 func (m manager) processGroups() {
@@ -137,7 +194,6 @@ func (m manager) processGroups() {
 		}
 
 		childGroups := parent.GetGroups()
-
 		for _, child := range childGroups {
 			m.groupsWG.Add(1)
 			m.groupsSignalOnce.Do(func() { m.groupsSignalWG.Done() })
@@ -147,7 +203,6 @@ func (m manager) processGroups() {
 		}
 
 		childProjects := parent.GetProjects()
-
 		for _, child := range childProjects {
 			m.projectsWG.Add(1)
 			m.projectsSignalOnce.Do(func() { m.projectsSignalWG.Done() })
