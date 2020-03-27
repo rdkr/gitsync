@@ -1,8 +1,10 @@
 package concurrency_test
 
 import (
+	"sort"
 	"testing"
 
+	"github.com/go-test/deep"
 	"github.com/rdkr/gitsync/concurrency"
 )
 
@@ -121,5 +123,40 @@ func TestConcurrency(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestChannelMerger(t *testing.T) {
+
+	out := make(chan interface{})
+	in1 := make(chan interface{})
+	in2 := make(chan interface{})
+	in3 := make(chan interface{})
+
+	go func() {
+		concurrency.ChannelMerger(out, in1, in2, in3)
+	}()
+
+	go func() {
+		in1 <- 5
+		in2 <- 6
+		in1 <- 1
+		in2 <- 4
+		in3 <- 3
+		in3 <- 2
+		close(in1)
+		close(in2)
+		close(in3)
+	}()
+
+	var outCheck []int
+	for i := 0; i < 6; i++ {
+		value := <-out
+		outCheck = append(outCheck, value.(int))
+	}
+
+	sort.Ints(outCheck)
+	if diff := deep.Equal(outCheck, []int{1, 2, 3, 4, 5, 6}); diff != nil {
+		t.Error(diff)
 	}
 }

@@ -1,6 +1,8 @@
 package concurrency
 
-import "sync"
+import (
+	"sync"
+)
 
 type Project struct {
 	URL      string `yaml:"url"`
@@ -165,4 +167,28 @@ func (m manager) processProject(projectsChanSender projectChanSenderFunc) {
 		projectsChanSender(m.projectAction, project)
 		m.projectsWG.Done()
 	}
+}
+
+// ChannelMerger merges the output of n channel into one
+func ChannelMerger(output chan<- interface{}, inputs ...<-chan interface{}) {
+
+	var wg sync.WaitGroup
+
+	for _, input := range inputs {
+		wg.Add(1)
+
+		go func(input <-chan interface{}) {
+			for {
+				value, ok := <-input
+				if !ok {
+					break
+				}
+				output <- value
+			}
+			wg.Done()
+		}(input)
+	}
+
+	wg.Wait()
+	close(output)
 }

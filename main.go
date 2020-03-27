@@ -64,17 +64,21 @@ var rootCmd = &cobra.Command{
 		isTerminal := terminal.IsTerminal(int(os.Stdout.Fd()))
 		ui := gitsync.NewUI(isTerminal, verbose, debug)
 
-		// create concurrency manager
+		// create concurrency managers
 		gl := concurrency.NewGitlabManager(gitsync.GitSyncHelper)
 		gh := concurrency.NewGithubManager(gitsync.GitSyncHelper)
 
+		// create status merger channel
+		statuses := make(chan interface{})
+
 		// create wait group to manage the above
 		wg := sync.WaitGroup{}
-		wg.Add(3)
+		wg.Add(4)
 
 		// start concurrency manager
 		go func() {
-			cm.Start(gitsync.GetItemsFromCfg(cfg))
+			gl.Start(gitsync.GetItemsFromCfg(cfg))
+			gh.Start(gitsync.GetItemsFromCfg(cfg))
 			wg.Done()
 		}()
 
@@ -84,10 +88,16 @@ var rootCmd = &cobra.Command{
 			wg.Done()
 		}()
 
+		// start status merger
+		go func() {
+			concurrency.ChannelMerger(statuses, gl.ProjectChan, gh.ProjectChan)
+			wg.Done()
+		}()
+
 		// connect cm and ui
 		go func() {
 			for {
-				status, ok := <-cm.ProjectChan
+				status, ok := <-statuses
 				if !ok {
 					break
 				}
