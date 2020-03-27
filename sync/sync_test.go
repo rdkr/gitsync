@@ -25,6 +25,7 @@ var syncTests = []struct {
 		name: "cloneSuccess",
 		setup: func(mockGit *mocks.MockGit) *mocks.MockGit {
 			mockGit.EXPECT().PlainOpen().Return(nil, git.ErrRepositoryNotExists)
+			mockGit.EXPECT().GetLocation().Return("somewhere")
 			mockGit.EXPECT().PlainClone().Return("", nil)
 			return mockGit
 		},
@@ -34,6 +35,7 @@ var syncTests = []struct {
 		name: "cloneFail",
 		setup: func(mockGit *mocks.MockGit) *mocks.MockGit {
 			mockGit.EXPECT().PlainOpen().Return(nil, git.ErrRepositoryNotExists)
+			mockGit.EXPECT().GetLocation().Return("somewhere")
 			mockGit.EXPECT().PlainClone().Return("", errors.New("uh oh"))
 			return mockGit
 		},
@@ -43,6 +45,7 @@ var syncTests = []struct {
 		name: "openFail",
 		setup: func(mockGit *mocks.MockGit) *mocks.MockGit {
 			mockGit.EXPECT().PlainOpen().Return(nil, errors.New("uh oh"))
+			mockGit.EXPECT().GetLocation().Return("somewhere")
 			return mockGit
 		},
 		expected: sync.Status{"somewhere", sync.StatusError, "", errors.New("unable to open repo: uh oh")},
@@ -58,6 +61,7 @@ var syncTests = []struct {
 			}
 
 			mockGit.EXPECT().PlainOpen().Return(r, nil)
+			mockGit.EXPECT().GetLocation().Return("somewhere")
 
 			return mockGit
 
@@ -80,6 +84,7 @@ var syncTests = []struct {
 			}
 
 			mockGit.EXPECT().PlainOpen().Return(r, nil)
+			mockGit.EXPECT().GetLocation().Return("somewhere")
 
 			return mockGit
 
@@ -103,6 +108,7 @@ var syncTests = []struct {
 			}
 
 			mockGit.EXPECT().PlainOpen().Return(r, nil)
+			mockGit.EXPECT().GetLocation().Return("somewhere")
 			mockGit.EXPECT().Fetch(r).Return("", git.NoErrAlreadyUpToDate)
 
 			return mockGit
@@ -127,6 +133,7 @@ var syncTests = []struct {
 			}
 
 			mockGit.EXPECT().PlainOpen().Return(r, nil)
+			mockGit.EXPECT().GetLocation().Return("somewhere")
 			mockGit.EXPECT().Fetch(r).Return("", errors.New("uh oh"))
 
 			return mockGit
@@ -146,6 +153,7 @@ var syncTests = []struct {
 			}
 
 			mockGit.EXPECT().PlainOpen().Return(r, nil)
+			mockGit.EXPECT().GetLocation().Return("somewhere")
 			mockGit.EXPECT().Pull(w).Return("", nil)
 
 			return mockGit
@@ -165,6 +173,7 @@ var syncTests = []struct {
 			}
 
 			mockGit.EXPECT().PlainOpen().Return(r, nil)
+			mockGit.EXPECT().GetLocation().Return("somewhere")
 			mockGit.EXPECT().Pull(w).Return("", git.NoErrAlreadyUpToDate)
 
 			return mockGit
@@ -184,6 +193,7 @@ var syncTests = []struct {
 			}
 
 			mockGit.EXPECT().PlainOpen().Return(r, nil)
+			mockGit.EXPECT().GetLocation().Return("somewhere")
 			mockGit.EXPECT().Pull(w).Return("", errors.New("uh oh"))
 
 			return mockGit
@@ -204,11 +214,7 @@ func TestSync(t *testing.T) {
 			mockGit := mocks.NewMockGit(ctrl)
 			mockGit = tc.setup(mockGit)
 
-			actual := gitSyncHelper(concurrency.Project{
-				URL:      "",
-				Location: "somewhere",
-				Token:    "",
-			}, mockGit)
+			actual := sync.GitSync(mockGit)
 
 			if diff := deep.Equal(actual, tc.expected); diff != nil {
 				t.Error(diff)
@@ -221,12 +227,6 @@ func TestSync(t *testing.T) {
 type mockGit struct {
 	concurrency.Project
 	*mocks.MockGit
-}
-
-func gitSyncHelper(g concurrency.Project, mg *mocks.MockGit) sync.Status {
-	return sync.GitSync(g, func(concurrency.Project) sync.Git {
-		return mockGit{g, mg}
-	})
 }
 
 func newRepo() *git.Repository {

@@ -1,5 +1,5 @@
 test:
-	go generate
+	go generate ./...
 	go test -race -v ./sync ./concurrency
 
 ui:

@@ -1,6 +1,6 @@
 package sync
 
-//go:generate mockgen -destination=../mocks/mock_git.go -package=mocks gitsync/sync Git
+//go:generate mockgen -destination=../mocks/mock_git.go -package=mocks github.com/rdkr/gitsync/sync Git
 
 import (
 	"bytes"
@@ -10,16 +10,21 @@ import (
 	githttp "gopkg.in/src-d/go-git.v4/plumbing/transport/http"
 )
 
-type GitSyncProject struct {
-	concurrency.Project
-}
-
 // Git interface for network operations
 type Git interface {
+	GetLocation() string
 	PlainOpen() (*git.Repository, error)
 	PlainClone() (string, error)
 	Fetch(*git.Repository) (string, error)
 	Pull(*git.Worktree) (string, error)
+}
+
+type GitSyncProject struct {
+	concurrency.Project
+}
+
+func (p GitSyncProject) GetLocation() string {
+	return p.Location
 }
 
 func (p GitSyncProject) PlainOpen() (*git.Repository, error) {
