@@ -7,7 +7,6 @@ import (
 
 	"github.com/go-test/deep"
 	"github.com/golang/mock/gomock"
-	"github.com/rdkr/gitsync/concurrency"
 	"github.com/rdkr/gitsync/mocks"
 	"github.com/rdkr/gitsync/sync"
 	"gopkg.in/src-d/go-billy.v4/memfs"
@@ -222,11 +221,6 @@ func TestSync(t *testing.T) {
 
 		})
 	}
-}
-
-type mockGit struct {
-	concurrency.Project
-	*mocks.MockGit
 }
 
 func newRepo() *git.Repository {

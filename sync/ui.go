@@ -105,13 +105,13 @@ func (ui *UI) Run() {
 		if !ui.verbose {
 			switch status.Status {
 			case StatusCloned:
-				_, err := fmt.Fprint(ui.writer, fmt.Sprintf(" %s%s\n", SymbolClone, status.Path))
+				_, err := fmt.Fprintf(ui.writer, " %s%s\n", SymbolClone, status.Path)
 				checkErr(err)
 				ui.writer.Stop()
 				ui.writer = uilive.New()
 				ui.writer.Start()
 			case StatusError:
-				_, err := fmt.Fprint(ui.writer, fmt.Sprintf(" %s%s - %s\n", SymbolError, status.Path, status.Err))
+				_, err := fmt.Fprintf(ui.writer, " %s%s - %s\n", SymbolError, status.Path, status.Err)
 				checkErr(err)
 				ui.writer.Stop()
 				ui.writer = uilive.New()
