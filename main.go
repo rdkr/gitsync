@@ -77,8 +77,8 @@ var rootCmd = &cobra.Command{
 
 		// start concurrency manager
 		go func() {
-			gl.Start(gitsync.GetItemsFromCfg(cfg))
-			gh.Start(gitsync.GetItemsFromCfg(cfg))
+			gl.Start(gitsync.GetGitlabItemsFromCfg(cfg))
+			gh.Start(gitsync.GetGithubItemsFromCfg(cfg))
 			wg.Done()
 		}()
 

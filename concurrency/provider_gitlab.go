@@ -8,14 +8,6 @@ import (
 	"github.com/xanzy/go-gitlab"
 )
 
-type GitlabGroupProvider struct {
-	Client       *gitlab.Client
-	Token        string
-	RootFullPath string
-	Location     string
-	ID           int
-}
-
 type GitlabManager struct {
 	GroupChan   chan error
 	ProjectChan chan interface{}
@@ -38,12 +30,20 @@ func (m GitlabManager) projectsChanCloser() {
 	close(m.ProjectChan)
 }
 
-func (m GitlabManager) Start(groups []ProviderProcessor, projects []Project) {
+func (m GitlabManager) Start(users []User, groups []Group, projects []Project) {
 	m.start(groups, projects, m.projectChanSender, m.projectsChanCloser)
 }
 
-func (g *GitlabGroupProvider) GetGroups() []ProviderProcessor {
-	var result []ProviderProcessor
+type GitlabGroup struct {
+	Client       *gitlab.Client
+	Token        string
+	RootFullPath string
+	Location     string
+	ID           int
+}
+
+func (g *GitlabGroup) GetGroups() []Group {
+	var result []Group
 
 	parent, _, err := g.Client.Groups.GetGroup(g.ID)
 	if err != nil {
@@ -62,13 +62,13 @@ func (g *GitlabGroupProvider) GetGroups() []ProviderProcessor {
 	}
 
 	for _, child := range groups {
-		result = append(result, &GitlabGroupProvider{g.Client, g.Token, g.RootFullPath, g.Location, child.ID})
+		result = append(result, &GitlabGroup{g.Client, g.Token, g.RootFullPath, g.Location, child.ID})
 	}
 
 	return result
 }
 
-func (g *GitlabGroupProvider) GetProjects() []Project {
+func (g *GitlabGroup) GetProjects() []Project {
 	var result []Project
 
 	projects, _, err := g.Client.Groups.ListGroupProjects(g.ID, &gitlab.ListGroupProjectsOptions{

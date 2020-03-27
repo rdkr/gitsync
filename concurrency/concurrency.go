@@ -4,23 +4,27 @@ import (
 	"sync"
 )
 
+type Group interface {
+	GetGroups() []Group
+	GetProjects() []Project
+}
+
+type User interface {
+	GetProjects() []Project
+}
+
 type Project struct {
 	URL      string `yaml:"url"`
 	Location string `yaml:"location"`
 	Token    string `yaml:"token"`
 } // TODO move git specific stuff to sync module
 
-type ProviderProcessor interface {
-	GetGroups() []ProviderProcessor
-	GetProjects() []Project
-}
-
 type projectActionFunc func(Project) interface{}
 type projectChanSenderFunc func(projectAction projectActionFunc, project Project)
 type projectsChanCloserFunc func()
 
 type manager struct {
-	groups   chan ProviderProcessor
+	groups   chan Group
 	projects chan Project
 
 	groupsWG, groupsSignalWG, projectsWG, projectsSignalWG *sync.WaitGroup
@@ -31,7 +35,7 @@ type manager struct {
 
 func newManager(projectAction projectActionFunc) manager {
 	return manager{
-		groups:             make(chan ProviderProcessor),
+		groups:             make(chan Group),
 		projects:           make(chan Project),
 		groupsWG:           new(sync.WaitGroup),
 		groupsSignalWG:     new(sync.WaitGroup),
@@ -43,7 +47,7 @@ func newManager(projectAction projectActionFunc) manager {
 	}
 }
 
-func (m manager) start(groups []ProviderProcessor, projects []Project, projectsChanSender projectChanSenderFunc, projectsChanCloser projectsChanCloserFunc) {
+func (m manager) start(groups []Group, projects []Project, projectsChanSender projectChanSenderFunc, projectsChanCloser projectsChanCloserFunc) {
 
 	var wg sync.WaitGroup
 	wg.Add(2)
@@ -137,7 +141,7 @@ func (m manager) processGroups() {
 		for _, child := range childGroups {
 			m.groupsWG.Add(1)
 			m.groupsSignalOnce.Do(func() { m.groupsSignalWG.Done() })
-			go func(group ProviderProcessor) {
+			go func(group Group) {
 				m.groups <- group
 			}(child)
 		}

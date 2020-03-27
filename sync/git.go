@@ -4,6 +4,7 @@ package sync
 
 import (
 	"bytes"
+
 	"github.com/rdkr/gitsync/concurrency"
 	"gopkg.in/src-d/go-git.v4"
 	githttp "gopkg.in/src-d/go-git.v4/plumbing/transport/http"

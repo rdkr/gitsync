@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/rdkr/gitsync/concurrency"
-	"github.com/xanzy/go-gitlab"
 
 	"gopkg.in/src-d/go-git.v4"
 )
@@ -24,34 +23,7 @@ type Status struct {
 	Err    error
 }
 
-type ConfigParser func(Config) ([]concurrency.ProviderProcessor, []concurrency.Project)
 type GitSyncer func(Git, string) Status
-
-func GetItemsFromCfg(cfg Config) ([]concurrency.ProviderProcessor, []concurrency.Project) {
-
-	var groups []concurrency.ProviderProcessor
-	var projects []concurrency.Project
-
-	if len(cfg.Gitlab.Groups) > 0 || len(cfg.Gitlab.Projects) > 0 {
-
-		c := gitlab.NewClient(nil, cfg.Gitlab.Token)
-
-		for _, group := range cfg.Gitlab.Groups {
-			groups = append(groups, &concurrency.GitlabGroupProvider{c, cfg.Gitlab.Token, "", group.Location, group.Group})
-		}
-
-		for _, project := range cfg.Gitlab.Projects {
-			if project.Token == "" {
-				project.Token = cfg.Gitlab.Token
-			}
-			projects = append(projects, project)
-		}
-	}
-
-	projects = append(projects, cfg.Anon.Projects...)
-
-	return groups, projects
-}
 
 func GitSyncHelper(g concurrency.Project) interface{} {
 	return GitSync(g, func(concurrency.Project) Git {

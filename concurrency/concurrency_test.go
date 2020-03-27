@@ -9,11 +9,11 @@ import (
 )
 
 type testGroupProvider struct {
-	children []concurrency.ProviderProcessor
+	children []concurrency.Group
 	projects []concurrency.Project
 }
 
-func (g *testGroupProvider) GetGroups() []concurrency.ProviderProcessor {
+func (g *testGroupProvider) GetGroups() []concurrency.Group {
 	return g.children
 }
 
@@ -23,20 +23,20 @@ func (g *testGroupProvider) GetProjects() []concurrency.Project {
 
 var concurrencyTests = []struct {
 	name                string
-	mockGetItemsFromCfg func() ([]concurrency.ProviderProcessor, []concurrency.Project)
+	mockGetItemsFromCfg func() ([]concurrency.Group, []concurrency.Project)
 }{
 	{
 		name: "NoGroupsNoProjects",
-		mockGetItemsFromCfg: func() ([]concurrency.ProviderProcessor, []concurrency.Project) {
-			var groups []concurrency.ProviderProcessor
+		mockGetItemsFromCfg: func() ([]concurrency.Group, []concurrency.Project) {
+			var groups []concurrency.Group
 			var projects []concurrency.Project
 			return groups, projects
 		},
 	},
 	{
 		name: "NoGroupsAProject",
-		mockGetItemsFromCfg: func() ([]concurrency.ProviderProcessor, []concurrency.Project) {
-			var groups []concurrency.ProviderProcessor
+		mockGetItemsFromCfg: func() ([]concurrency.Group, []concurrency.Project) {
+			var groups []concurrency.Group
 			projects := []concurrency.Project{
 				{URL: "a", Location: "b", Token: "c"},
 			}
@@ -45,8 +45,8 @@ var concurrencyTests = []struct {
 	},
 	{
 		name: "EmptyGroupNoProject",
-		mockGetItemsFromCfg: func() ([]concurrency.ProviderProcessor, []concurrency.Project) {
-			groups := []concurrency.ProviderProcessor{
+		mockGetItemsFromCfg: func() ([]concurrency.Group, []concurrency.Project) {
+			groups := []concurrency.Group{
 				&testGroupProvider{children: nil, projects: nil},
 			}
 			var projects []concurrency.Project
@@ -55,8 +55,8 @@ var concurrencyTests = []struct {
 	},
 	{
 		name: "EmptyGroupAProject",
-		mockGetItemsFromCfg: func() ([]concurrency.ProviderProcessor, []concurrency.Project) {
-			groups := []concurrency.ProviderProcessor{
+		mockGetItemsFromCfg: func() ([]concurrency.Group, []concurrency.Project) {
+			groups := []concurrency.Group{
 				&testGroupProvider{children: nil, projects: nil},
 			}
 			projects := []concurrency.Project{
@@ -67,10 +67,10 @@ var concurrencyTests = []struct {
 	},
 	{
 		name: "NestedGroupNoProject",
-		mockGetItemsFromCfg: func() ([]concurrency.ProviderProcessor, []concurrency.Project) {
-			groups := []concurrency.ProviderProcessor{
+		mockGetItemsFromCfg: func() ([]concurrency.Group, []concurrency.Project) {
+			groups := []concurrency.Group{
 				&testGroupProvider{
-					children: []concurrency.ProviderProcessor{
+					children: []concurrency.Group{
 						&testGroupProvider{children: nil, projects: nil},
 					},
 					projects: []concurrency.Project{
@@ -84,10 +84,10 @@ var concurrencyTests = []struct {
 	},
 	{
 		name: "NestedGroupAProject",
-		mockGetItemsFromCfg: func() ([]concurrency.ProviderProcessor, []concurrency.Project) {
-			groups := []concurrency.ProviderProcessor{
+		mockGetItemsFromCfg: func() ([]concurrency.Group, []concurrency.Project) {
+			groups := []concurrency.Group{
 				&testGroupProvider{
-					children: []concurrency.ProviderProcessor{
+					children: []concurrency.Group{
 						&testGroupProvider{children: nil, projects: nil},
 					},
 					projects: []concurrency.Project{
