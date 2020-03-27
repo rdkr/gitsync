@@ -1,15 +1,12 @@
 module github.com/rdkr/gitsync
 
-go 1.13
+go 1.14
 
 require (
-	github.com/coreos/go-etcd v2.0.0+incompatible // indirect
-	github.com/cpuguy83/go-md2man v1.0.10 // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/go-test/deep v1.0.2
 	github.com/golang/mock v1.4.3
 	github.com/golang/protobuf v1.3.5 // indirect
-	github.com/google/go-github v17.0.0+incompatible // indirect
 	github.com/google/go-github/v30 v30.1.0
 	github.com/gosuri/uilive v0.0.4
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
@@ -25,7 +22,6 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.6.2
-	github.com/ugorji/go/codec v0.0.0-20181204163529-d75b2dcb6bc8 // indirect
 	github.com/xanzy/go-gitlab v0.29.0
 	golang.org/x/crypto v0.0.0-20200323165209-0ec3e9974c59
 	golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e // indirect
