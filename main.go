@@ -18,21 +18,28 @@ var verbose bool
 var debug bool
 var cfg gitsync.Config
 
-const usage = `gitsync is a tool to keep local Git repos in sync with remote Git hosts.
+const usage = `gitsync is a tool to keep many local repos in sync with their remote hosts.
 
-It supports syncing individual Git repos and recursively syncing Git host groups.
+It supports syncing GitHub / GitLab users' repos, recursively syncing GitHub / GitLab
+groups, and syncing generic Git repos, all over HTTPS and optionally using auth tokens.
 
-Supported Git hosts:
- - GitLab groups and repos over HTTPS (optionally with auth token)
- - Anonymous repos over HTTPS
+                Users'   Groups'   Individual
+    GitHub        x 
+    GitLab                  x          x
+    Generic                            x
 
-Groups are recursed to find projects. Projects are concurrently synced, i.e:
+Groups are recursed to find projects. All projects are concurrently synced, i.e:
  - cloned, if the local repo doesn't exist
  - pulled, if the local repo exists and is on master
  - fetched, if neither of the above
 
 A .yaml config file is expected, The format of the config file is:
 
+github:       # optional: defines GitHub resources
+  token:        # optional: a GitHub API token
+  users:       # optional: defines GitHub users
+  - name:         # required: GitHub username
+    location:     # required: local path to sync to
 gitlab:       # optional: defines GitLab resources
   token:        # optional: a GitLab API token
   groups:       # optional: defines GitLab groups
