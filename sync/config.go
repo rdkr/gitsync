@@ -1,9 +1,13 @@
 package sync
 
 import (
+	"context"
+
 	"github.com/google/go-github/v30/github"
 	"github.com/rdkr/gitsync/concurrency"
+	"github.com/sirupsen/logrus"
 	"github.com/xanzy/go-gitlab"
+	"golang.org/x/oauth2"
 )
 
 type Config struct {
@@ -53,7 +57,18 @@ func GetGithubItemsFromCfg(cfg Config) ([]concurrency.User, []concurrency.Group,
 	// if len(cfg.Github.Groups) > 0 || len(cfg.Github.Projects) > 0 || len(cfg.Github.Users) > 0 {
 	if len(cfg.Github.Users) > 0 {
 
-		c := github.NewClient(nil)
+		var c *github.Client
+
+		if cfg.Github.Token != "" {
+			ctx := context.Background()
+			ts := oauth2.StaticTokenSource(
+				&oauth2.Token{AccessToken: cfg.Github.Token},
+			)
+			tc := oauth2.NewClient(ctx, ts)
+			c = github.NewClient(tc)
+		} else {
+			logrus.Fatal("a token is required to sync GitHub users")
+		}
 
 		for _, user := range cfg.Github.Users {
 			users = append(users, &concurrency.GithubUser{c, user.Name, user.Location, cfg.Github.Token})
@@ -73,7 +88,10 @@ func GetGitlabItemsFromCfg(cfg Config) ([]concurrency.User, []concurrency.Group,
 
 	if len(cfg.Gitlab.Groups) > 0 || len(cfg.Gitlab.Projects) > 0 {
 
-		c := gitlab.NewClient(nil, cfg.Gitlab.Token)
+		c, err := gitlab.NewClient(cfg.Gitlab.Token)
+		if err != nil {
+			logrus.Fatalf("GitLab error: %v", err)
+		}
 
 		for _, group := range cfg.Gitlab.Groups {
 			groups = append(groups, &concurrency.GitlabGroup{c, cfg.Gitlab.Token, "", group.Location, group.Group})

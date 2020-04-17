@@ -45,7 +45,9 @@ func (u *GithubUser) GetProjects() []Project {
 
 	logrus.Debug("getting projects")
 
-	projects, _, err := u.Client.Repositories.List(context.Background(), u.Name, &github.RepositoryListOptions{})
+	projects, _, err := u.Client.Repositories.List(context.Background(), "", &github.RepositoryListOptions{
+		Type: "owner",
+	})
 	if err != nil {
 		logrus.Fatal(err)
 	}

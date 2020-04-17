@@ -37,7 +37,7 @@ Groups are recursed to find projects. All projects are concurrently synced, i.e:
 A .yaml config file is expected, The format of the config file is:
 
 github:       # optional: defines GitHub resources
-  token:        # optional: a GitHub API token
+  token:        # required: a GitHub API token
   users:       # optional: defines GitHub users
   - name:         # required: GitHub username
     location:     # required: local path to sync to
