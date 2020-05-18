@@ -24,7 +24,7 @@ It supports syncing GitHub / GitLab users' repos, recursively syncing GitHub / G
 groups, and syncing generic Git repos, all over HTTPS and optionally using auth tokens.
 
                 Users'   Groups'   Individual
-    GitHub        x 
+    GitHub        x
     GitLab                  x          x
     Generic                            x
 
@@ -37,10 +37,11 @@ A .yaml config file is expected, The format of the config file is:
 
 github:       # optional: defines GitHub resources
   token:        # required: a GitHub API token
-  users:       # optional: defines GitHub users
+  users:        # optional: defines GitHub users
   - name:         # required: GitHub username
     location:     # required: local path to sync to
 gitlab:       # optional: defines GitLab resources
+  baseurl:      # optional: a custom GitLab API URL
   token:        # optional: a GitLab API token
   groups:       # optional: defines GitLab groups
   - group:        # required: group ID number

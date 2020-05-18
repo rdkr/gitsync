@@ -58,7 +58,12 @@ func (g *GitlabGroup) GetGroups() []Group {
 		AllAvailable: gitlab.Bool(true),
 	})
 	if err != nil {
-		logrus.Fatal(err)
+		// Response code is 404 if missing permissions for ListSubgroups
+		if errVal := err.(*gitlab.ErrorResponse); errVal.Response.StatusCode == 404 {
+			logrus.Warn(err)
+		} else {
+			logrus.Fatal(err)
+		}
 	}
 
 	for _, child := range groups {

@@ -1,4 +1,4 @@
-# gitsync [![Build Status](https://travis-ci.org/rdkr/gitsync.svg)](https://travis-ci.org/rdkr/gitsync) [![codecov.io](https://codecov.io/github/rdkr/gitsync/coverage.svg)](https://codecov.io/github/rdkr/gitsync) [![Maintainability](https://api.codeclimate.com/v1/badges/c86f6cac36c28c9ea55f/maintainability)](https://codeclimate.com/github/rdkr/gitsync/maintainability) [![License](https://img.shields.io/github/license/rdkr/gitsync)](https://github.com/rdkr/gitsync/blob/master/LICENSE) [![Releases](https://img.shields.io/github/v/release/rdkr/gitsync)](https://github.com/rdkr/gitsync/releases) 
+# gitsync [![Build Status](https://travis-ci.org/rdkr/gitsync.svg)](https://travis-ci.org/rdkr/gitsync) [![codecov.io](https://codecov.io/github/rdkr/gitsync/coverage.svg)](https://codecov.io/github/rdkr/gitsync) [![Maintainability](https://api.codeclimate.com/v1/badges/c86f6cac36c28c9ea55f/maintainability)](https://codeclimate.com/github/rdkr/gitsync/maintainability) [![License](https://img.shields.io/github/license/rdkr/gitsync)](https://github.com/rdkr/gitsync/blob/master/LICENSE) [![Releases](https://img.shields.io/github/v/release/rdkr/gitsync)](https://github.com/rdkr/gitsync/releases)
 
 gitsync is a tool to keep many local repos in sync with their remote hosts.
 
@@ -25,7 +25,7 @@ It supports syncing GitHub / GitLab users' repos, recursively syncing GitHub / G
 groups, and syncing generic Git repos, all over HTTPS and optionally using auth tokens.
 
                 Users'   Groups'   Individual
-    GitHub        x 
+    GitHub        x
     GitLab                  x          x
     Generic                            x
 
@@ -38,10 +38,11 @@ A .yaml config file is expected, The format of the config file is:
 
 github:       # optional: defines GitHub resources
   token:        # required: a GitHub API token
-  users:       # optional: defines GitHub users
+  users:        # optional: defines GitHub users
   - name:         # required: GitHub username
     location:     # required: local path to sync to
 gitlab:       # optional: defines GitLab resources
+  baseurl:      # optional: a custom GitLab API URL
   token:        # optional: a GitLab API token
   groups:       # optional: defines GitLab groups
   - group:        # required: group ID number

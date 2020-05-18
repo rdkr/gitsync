@@ -34,6 +34,7 @@ type gitlabConfig struct {
 	Groups   []gitlabGroup         `yaml:"groups"`
 	Projects []concurrency.Project `yaml:"projects"`
 	Token    string                `yaml:"token"`
+	BaseURL  string                `yaml:"baseurl"`
 }
 
 type gitlabGroup struct {
@@ -88,7 +89,12 @@ func GetGitlabItemsFromCfg(cfg Config) ([]concurrency.User, []concurrency.Group,
 
 	if len(cfg.Gitlab.Groups) > 0 || len(cfg.Gitlab.Projects) > 0 {
 
-		c, err := gitlab.NewClient(cfg.Gitlab.Token)
+		baseurlOption := gitlab.ClientOptionFunc(nil)
+		if cfg.Gitlab.BaseURL != "" {
+			baseurlOption = gitlab.ClientOptionFunc(gitlab.WithBaseURL(cfg.Gitlab.BaseURL))
+		}
+
+		c, err := gitlab.NewClient(cfg.Gitlab.Token, baseurlOption)
 		if err != nil {
 			logrus.Fatalf("GitLab error: %v", err)
 		}
