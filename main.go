@@ -30,7 +30,7 @@ groups, and syncing generic Git repos, all over HTTPS and optionally using auth 
 
 Groups are recursed to find projects. All projects are concurrently synced, i.e:
  - cloned, if the local repo doesn't exist
- - pulled, if the local repo exists and is on master
+ - pulled, if the local repo exists and is on main
  - fetched, if neither of the above
 
 A .yaml config file is expected, The format of the config file is:

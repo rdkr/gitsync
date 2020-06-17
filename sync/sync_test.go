@@ -113,7 +113,7 @@ var syncTests = []struct {
 			return mockGit
 
 		},
-		expected: sync.Status{Path: "somewhere", Status: sync.StatusError, Err: errors.New("not on master branch but fetched")},
+		expected: sync.Status{Path: "somewhere", Status: sync.StatusError, Err: errors.New("not on main branch but fetched")},
 	},
 	{
 		name: "fetchFail",
@@ -138,7 +138,7 @@ var syncTests = []struct {
 			return mockGit
 
 		},
-		expected: sync.Status{Path: "somewhere", Status: sync.StatusError, Err: errors.New("not on master branch and: uh oh")},
+		expected: sync.Status{Path: "somewhere", Status: sync.StatusError, Err: errors.New("not on main branch and: uh oh")},
 	},
 	{
 		name: "pullSuccess",
@@ -198,7 +198,7 @@ var syncTests = []struct {
 			return mockGit
 
 		},
-		expected: sync.Status{Path: "somewhere", Status: sync.StatusError, Err: errors.New("unable to pull master: uh oh")},
+		expected: sync.Status{Path: "somewhere", Status: sync.StatusError, Err: errors.New("unable to pull main: uh oh")},
 	},
 }
 

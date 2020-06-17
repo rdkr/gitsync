@@ -57,13 +57,13 @@ func GitSync(g Git) Status {
 		return Status{g.GetLocation(), StatusError, "", fmt.Errorf("unable to get head: %v", err)}
 	}
 
-	if ref.Name() != "refs/heads/master" {
+	if ref.Name() != "refs/heads/main" && ref.Name() != "refs/heads/master" {
 		progress, err := p.Fetch(repo)
 
 		if err == git.NoErrAlreadyUpToDate || err == nil {
-			return Status{g.GetLocation(), StatusError, progress, errors.New("not on master branch but fetched")}
+			return Status{g.GetLocation(), StatusError, progress, errors.New("not on main branch but fetched")}
 		}
-		return Status{g.GetLocation(), StatusError, progress, fmt.Errorf("not on master branch and: %v", err)}
+		return Status{g.GetLocation(), StatusError, progress, fmt.Errorf("not on main branch and: %v", err)}
 
 	}
 
@@ -73,5 +73,5 @@ func GitSync(g Git) Status {
 	} else if err == git.NoErrAlreadyUpToDate {
 		return Status{g.GetLocation(), StatusUpToDate, progress, nil}
 	}
-	return Status{g.GetLocation(), StatusError, progress, fmt.Errorf("unable to pull master: %v", err)}
+	return Status{g.GetLocation(), StatusError, progress, fmt.Errorf("unable to pull main: %v", err)}
 }
