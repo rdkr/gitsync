@@ -53,7 +53,7 @@ func (u *GithubUser) GetProjects() []Project {
 	}
 
 	for _, p := range projects {
-		if *p.Archived != true {
+		if !*p.Archived {
 			result = append(result, Project{*p.CloneURL, u.Location + "/" + *p.Name, u.Token})
 		}
 	}
