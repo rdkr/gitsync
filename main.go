@@ -40,6 +40,9 @@ github:       # optional: defines GitHub resources
   users:        # optional: defines GitHub users
   - name:         # required: GitHub username
     location:     # required: local path to sync to
+  orgs:           # optional: defines GitHub Organization
+  - name:         # required: GitHub username
+    location:     # required: local path to sync to
 gitlab:       # optional: defines GitLab resources
   baseurl:      # optional: a custom GitLab API URL
   token:        # optional: a GitLab API token

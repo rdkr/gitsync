@@ -13,6 +13,10 @@ type User interface {
 	GetProjects() []Project
 }
 
+type Org interface {
+	GetProjectsByOrg() []Project
+}
+
 type Project struct {
 	URL      string `yaml:"url"`
 	Location string `yaml:"location"`
@@ -25,11 +29,12 @@ type projectsChanCloserFunc func()
 
 type manager struct {
 	users    chan User
+	orgs     chan Org
 	groups   chan Group
 	projects chan Project
 
-	usersWG, usersSignalWG, groupsWG, groupsSignalWG, projectsWG, projectsSignalWG *sync.WaitGroup
-	usersSignalOnce, groupsSignalOnce, projectsSignalOnce                          *sync.Once
+	usersWG, usersSignalWG, orgsWG, orgsSignalWG, groupsWG, groupsSignalWG, projectsWG, projectsSignalWG *sync.WaitGroup
+	usersSignalOnce, orgsSignalOnce, groupsSignalOnce, projectsSignalOnce                                *sync.Once
 
 	projectAction projectActionFunc
 }
@@ -37,11 +42,15 @@ type manager struct {
 func newManager(projectAction projectActionFunc) manager {
 	return manager{
 		users:              make(chan User),
+		orgs:               make(chan Org),
 		groups:             make(chan Group),
 		projects:           make(chan Project),
 		usersWG:            new(sync.WaitGroup),
 		usersSignalWG:      new(sync.WaitGroup),
 		usersSignalOnce:    new(sync.Once),
+		orgsWG:             new(sync.WaitGroup),
+		orgsSignalWG:       new(sync.WaitGroup),
+		orgsSignalOnce:     new(sync.Once),
 		groupsWG:           new(sync.WaitGroup),
 		groupsSignalWG:     new(sync.WaitGroup),
 		groupsSignalOnce:   new(sync.Once),
@@ -52,18 +61,21 @@ func newManager(projectAction projectActionFunc) manager {
 	}
 }
 
-func (m manager) start(users []User, groups []Group, projects []Project, projectsChanSender projectChanSenderFunc, projectsChanCloser projectsChanCloserFunc) {
+func (m manager) start(users []User, orgs []Org, groups []Group, projects []Project, projectsChanSender projectChanSenderFunc, projectsChanCloser projectsChanCloserFunc) {
 
 	var wg sync.WaitGroup
-	wg.Add(3)
+	wg.Add(4)
 
 	m.usersWG.Add(1)
 	m.usersSignalWG.Add(1)
 
+	m.orgsWG.Add(1)
+	m.orgsSignalWG.Add(1)
+
 	m.groupsWG.Add(1)
 	m.groupsSignalWG.Add(1)
 
-	m.projectsWG.Add(3)
+	m.projectsWG.Add(4)
 	m.projectsSignalWG.Add(1)
 
 	// groups manager goroutine
@@ -80,6 +92,29 @@ func (m manager) start(users []User, groups []Group, projects []Project, project
 		// wait to finish processing all groups before closing channel
 		m.usersWG.Wait()
 		close(m.users)
+
+		// ensure we have processed all groups before stopping on projects
+		m.projectsWG.Done()
+
+		// stop the groups manager goroutine
+		wg.Done()
+
+	}()
+
+	//org go routine
+	go func() {
+
+		// start some groups processors
+		for w := 0; w < 5; w++ {
+			go m.processOrgs()
+		}
+
+		// wait for a signal indicating that we have a group to process
+		m.orgsSignalWG.Wait()
+
+		// wait to finish processing all groups before closing channel
+		m.orgsWG.Wait()
+		close(m.orgs)
 
 		// ensure we have processed all groups before stopping on projects
 		m.projectsWG.Done()
@@ -142,6 +177,13 @@ func (m manager) start(users []User, groups []Group, projects []Project, project
 	m.usersWG.Done()
 	m.usersSignalOnce.Do(func() { m.usersSignalWG.Done() })
 
+	for _, o := range orgs {
+		m.orgsWG.Add(1)
+		m.orgs <- o
+	}
+	m.orgsWG.Done()
+	m.orgsSignalOnce.Do(func() { m.orgsSignalWG.Done() })
+
 	for _, g := range groups {
 		m.groupsWG.Add(1)
 		m.groups <- g
@@ -162,6 +204,27 @@ func (m manager) start(users []User, groups []Group, projects []Project, project
 
 	wg.Wait()
 
+}
+
+func (m manager) processOrgs() {
+	for {
+
+		org, ok := <-m.orgs
+		if !ok {
+			break
+		}
+
+		childProjects := org.GetProjectsByOrg()
+		for _, child := range childProjects {
+			m.projectsWG.Add(1)
+			m.projectsSignalOnce.Do(func() { m.projectsSignalWG.Done() })
+			go func(project Project) {
+				m.projects <- project
+			}(child)
+		}
+
+		m.orgsWG.Done()
+	}
 }
 
 func (m manager) processUsers() {
