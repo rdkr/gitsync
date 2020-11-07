@@ -16,7 +16,7 @@ import (
 var cfgFile string
 var verbose bool
 var debug bool
-var cfg gitsync.Config
+var cfg concurrency.Config
 
 const usage = `gitsync is a tool to keep many local repos in sync with their remote hosts.
 
@@ -88,8 +88,8 @@ var rootCmd = &cobra.Command{
 
 		// start concurrency manager
 		go func() {
-			gl.Start(gitsync.GetGitlabItemsFromCfg(cfg))
-			gh.Start(gitsync.GetGithubItemsFromCfg(cfg))
+			gl.Start(concurrency.GetGitlabItemsFromCfg(cfg))
+			gh.Start(concurrency.GetGithubItemsFromCfg(cfg))
 			wg.Done()
 		}()
 

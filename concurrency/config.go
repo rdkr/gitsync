@@ -1,10 +1,9 @@
-package sync
+package concurrency
 
 import (
 	"context"
 
 	"github.com/google/go-github/v30/github"
-	"github.com/rdkr/gitsync/concurrency"
 	"github.com/sirupsen/logrus"
 	"github.com/xanzy/go-gitlab"
 	"golang.org/x/oauth2"
@@ -19,7 +18,7 @@ type Config struct {
 // Github
 type githubConfig struct {
 	// Groups   []gitlabGroup         `yaml:"groups"`
-	// Projects []concurrency.Project `yaml:"projects"`
+	// Projects []Project `yaml:"projects"`
 	Users []githubUser `yaml:"users"`
 	Orgs  []githubOrg  `yaml:"orgs"`
 	Token string       `yaml:"token"`
@@ -37,10 +36,10 @@ type githubOrg struct {
 
 // Gitlab
 type gitlabConfig struct {
-	Groups   []gitlabGroup         `yaml:"groups"`
-	Projects []concurrency.Project `yaml:"projects"`
-	Token    string                `yaml:"token"`
-	BaseURL  string                `yaml:"baseurl"`
+	Groups   []gitlabGroup `yaml:"groups"`
+	Projects []Project     `yaml:"projects"`
+	Token    string        `yaml:"token"`
+	BaseURL  string        `yaml:"baseurl"`
 }
 
 type gitlabGroup struct {
@@ -50,17 +49,17 @@ type gitlabGroup struct {
 
 // Anon
 type anonConfig struct {
-	Projects []concurrency.Project `yaml:"projects"`
+	Projects []Project `yaml:"projects"`
 }
 
-type ConfigParser func(Config) ([]concurrency.User, []concurrency.Org, []concurrency.Group, []concurrency.Project)
+type ConfigParser func(Config) ([]User, []Org, []Group, []Project)
 
-func GetGithubItemsFromCfg(cfg Config) ([]concurrency.User, []concurrency.Org, []concurrency.Group, []concurrency.Project) {
+func GetGithubItemsFromCfg(cfg Config) ([]User, []Org, []Group, []Project) {
 
-	var users []concurrency.User
-	var orgs []concurrency.Org
-	var groups []concurrency.Group
-	var projects []concurrency.Project
+	var users []User
+	var orgs []Org
+	var groups []Group
+	var projects []Project
 
 	// if len(cfg.Github.Groups) > 0 || len(cfg.Github.Projects) > 0 || len(cfg.Github.Users) > 0 {
 	if len(cfg.Github.Users) > 0 {
@@ -79,7 +78,7 @@ func GetGithubItemsFromCfg(cfg Config) ([]concurrency.User, []concurrency.Org, [
 		}
 
 		for _, user := range cfg.Github.Users {
-			users = append(users, &concurrency.GithubUser{c, user.Name, user.Location, cfg.Github.Token})
+			users = append(users, &GithubUser{c, user.Name, user.Location, cfg.Github.Token})
 		}
 	}
 
@@ -99,7 +98,7 @@ func GetGithubItemsFromCfg(cfg Config) ([]concurrency.User, []concurrency.Org, [
 		}
 
 		for _, org := range cfg.Github.Orgs {
-			orgs = append(orgs, &concurrency.GithubOrg{c, org.Name, org.Location, cfg.Github.Token})
+			orgs = append(orgs, &GithubOrg{c, org.Name, org.Location, cfg.Github.Token})
 		}
 	}
 
@@ -108,11 +107,11 @@ func GetGithubItemsFromCfg(cfg Config) ([]concurrency.User, []concurrency.Org, [
 	return users, orgs, groups, projects
 }
 
-func GetGitlabItemsFromCfg(cfg Config) ([]concurrency.User, []concurrency.Group, []concurrency.Project) {
+func GetGitlabItemsFromCfg(cfg Config) ([]User, []Group, []Project) {
 
-	var users []concurrency.User
-	var groups []concurrency.Group
-	var projects []concurrency.Project
+	var users []User
+	var groups []Group
+	var projects []Project
 
 	if len(cfg.Gitlab.Groups) > 0 || len(cfg.Gitlab.Projects) > 0 {
 
@@ -127,7 +126,7 @@ func GetGitlabItemsFromCfg(cfg Config) ([]concurrency.User, []concurrency.Group,
 		}
 
 		for _, group := range cfg.Gitlab.Groups {
-			groups = append(groups, &concurrency.GitlabGroup{c, cfg.Gitlab.Token, "", group.Location, group.Group})
+			groups = append(groups, &GitlabGroup{c, cfg.Gitlab.Token, "", group.Location, group.Group})
 		}
 
 		for _, project := range cfg.Gitlab.Projects {
