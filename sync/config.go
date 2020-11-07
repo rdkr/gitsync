@@ -21,10 +21,16 @@ type githubConfig struct {
 	// Groups   []gitlabGroup         `yaml:"groups"`
 	// Projects []concurrency.Project `yaml:"projects"`
 	Users []githubUser `yaml:"users"`
+	Orgs  []githubOrg  `yaml:"orgs"`
 	Token string       `yaml:"token"`
 }
 
 type githubUser struct {
+	Name     string `yaml:"name"`
+	Location string `yaml:"location"`
+}
+
+type githubOrg struct {
 	Name     string `yaml:"name"`
 	Location string `yaml:"location"`
 }
@@ -47,11 +53,12 @@ type anonConfig struct {
 	Projects []concurrency.Project `yaml:"projects"`
 }
 
-type ConfigParser func(Config) ([]concurrency.User, []concurrency.Group, []concurrency.Project)
+type ConfigParser func(Config) ([]concurrency.User, []concurrency.Org, []concurrency.Group, []concurrency.Project)
 
-func GetGithubItemsFromCfg(cfg Config) ([]concurrency.User, []concurrency.Group, []concurrency.Project) {
+func GetGithubItemsFromCfg(cfg Config) ([]concurrency.User, []concurrency.Org, []concurrency.Group, []concurrency.Project) {
 
 	var users []concurrency.User
+	var orgs []concurrency.Org
 	var groups []concurrency.Group
 	var projects []concurrency.Project
 
@@ -76,9 +83,29 @@ func GetGithubItemsFromCfg(cfg Config) ([]concurrency.User, []concurrency.Group,
 		}
 	}
 
+	if len(cfg.Github.Orgs) > 0 {
+
+		var c *github.Client
+
+		if cfg.Github.Token != "" {
+			ctx := context.Background()
+			ts := oauth2.StaticTokenSource(
+				&oauth2.Token{AccessToken: cfg.Github.Token},
+			)
+			tc := oauth2.NewClient(ctx, ts)
+			c = github.NewClient(tc)
+		} else {
+			logrus.Fatal("a token is required to sync GitHub users")
+		}
+
+		for _, org := range cfg.Github.Orgs {
+			orgs = append(orgs, &concurrency.GithubOrg{c, org.Name, org.Location, cfg.Github.Token})
+		}
+	}
+
 	projects = append(projects, cfg.Anon.Projects...)
 
-	return users, groups, projects
+	return users, orgs, groups, projects
 }
 
 func GetGitlabItemsFromCfg(cfg Config) ([]concurrency.User, []concurrency.Group, []concurrency.Project) {

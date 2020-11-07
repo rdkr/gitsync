@@ -31,7 +31,7 @@ func (m GitlabManager) projectsChanCloser() {
 }
 
 func (m GitlabManager) Start(users []User, groups []Group, projects []Project) {
-	m.start(users, groups, projects, m.projectChanSender, m.projectsChanCloser)
+	m.start(users, nil, groups, projects, m.projectChanSender, m.projectsChanCloser)
 }
 
 type GitlabGroup struct {

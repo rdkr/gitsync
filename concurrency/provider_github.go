@@ -29,11 +29,18 @@ func (m GithubManager) projectsChanCloser() {
 	close(m.ProjectChan)
 }
 
-func (m GithubManager) Start(users []User, groups []Group, projects []Project) {
-	m.start(users, groups, projects, m.projectChanSender, m.projectsChanCloser)
+func (m GithubManager) Start(users []User, orgs []Org, groups []Group, projects []Project) {
+	m.start(users, orgs, groups, projects, m.projectChanSender, m.projectsChanCloser)
 }
 
 type GithubUser struct {
+	Client   *github.Client
+	Name     string
+	Location string
+	Token    string
+}
+
+type GithubOrg struct {
 	Client   *github.Client
 	Name     string
 	Location string
@@ -55,6 +62,28 @@ func (u *GithubUser) GetProjects() []Project {
 	for _, p := range projects {
 		if !*p.Archived {
 			result = append(result, Project{*p.CloneURL, u.Location + "/" + *p.Name, u.Token})
+		}
+	}
+
+	return result
+}
+
+func (o *GithubOrg) GetProjectsByOrg() []Project {
+	var result []Project
+
+	logrus.Debug("getting projects by org")
+
+	if o.Name != "" {
+		projectsByOrg, _, err := o.Client.Repositories.ListByOrg(context.Background(), o.Name, &github.RepositoryListByOrgOptions{})
+
+		if err != nil {
+			logrus.Fatal(err)
+		}
+
+		for _, p := range projectsByOrg {
+			if !*p.Archived {
+				result = append(result, Project{*p.CloneURL, o.Location + "/" + *p.Name, o.Token})
+			}
 		}
 	}
 
