@@ -20,15 +20,16 @@ var cfg concurrency.Config
 
 const usage = `gitsync is a tool to keep many local repos in sync with their remote hosts.
 
-It supports syncing GitHub / GitLab users' repos, recursively syncing GitHub / GitLab
-groups, and syncing generic Git repos, all over HTTPS and optionally using auth tokens.
+It supports recursively syncing GitHub orgs, GitHub users, GitLab groups, and individual
+repos. Repos are synced over HTTPS, optionally / where required using auth tokens.
 
-                Users'   Groups'   Individual
-    GitHub        x
-    GitLab                  x          x
-    Generic                            x
+                Users'   Orgs'   Groups'   Repos'
+    GitHub        x        x
+    GitLab                          x        x
+    HTTPS                                    x
 
-Groups are recursed to find projects. All projects are concurrently synced, i.e:
+Orgs / groups / user profiles are enumerated / recursed to find projects. All projects
+are then concurrently synced, i.e:
  - cloned, if the local repo doesn't exist
  - pulled, if the local repo exists and is on main
  - fetched, if neither of the above
@@ -68,7 +69,7 @@ Treat this file with care, as it may contain secrets.`
 
 var rootCmd = &cobra.Command{
 	Use:   "gitsync",
-	Short: "A tool to keep local Git repos in sync with remote Git servers",
+	Short: "gitsync is a tool to keep many local repos in sync with their remote hosts.",
 	Long:  usage,
 	Run: func(cmd *cobra.Command, args []string) {
 

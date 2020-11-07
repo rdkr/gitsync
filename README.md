@@ -2,8 +2,8 @@
 
 gitsync is a tool to keep many local repos in sync with their remote hosts.
 
-It supports syncing GitHub / GitLab users' repos, recursively syncing GitHub / GitLab
-groups, and syncing individual Git repos, all over HTTPS and optionally using auth tokens.
+It supports recursively syncing GitHub orgs, GitHub users, GitLab groups, and individual
+repos. Repos are synced over HTTPS, optionally / where required using auth tokens.
 
 ## Install
 
@@ -11,25 +11,20 @@ groups, and syncing individual Git repos, all over HTTPS and optionally using au
 go install github.com/rdkr/gitsync
 ```
 
-### MacOS
-```
-brew tap rdkr/taps
-brew install gitsync
-```
-
 ## Help text
 ```
 gitsync is a tool to keep many local repos in sync with their remote hosts.
 
-It supports syncing GitHub / GitLab users' repos, recursively syncing GitHub / GitLab
-groups, and syncing generic Git repos, all over HTTPS and optionally using auth tokens.
+It supports recursively syncing GitHub orgs, GitHub users, GitLab groups, and individual
+repos. Repos are synced over HTTPS, optionally / where required using auth tokens.
 
-                Users'   Groups'   Individual
-    GitHub        x
-    GitLab                  x          x
-    Generic                            x
+                Users'   Orgs'   Groups'   Repos'
+    GitHub        x        x
+    GitLab                          x        x
+    HTTPS                                    x
 
-Groups are recursed to find projects. All projects are concurrently synced, i.e:
+Orgs / groups / user profiles are enumerated / recursed to find projects. All projects
+are then concurrently synced, i.e:
  - cloned, if the local repo doesn't exist
  - pulled, if the local repo exists and is on main
  - fetched, if neither of the above
@@ -37,12 +32,16 @@ Groups are recursed to find projects. All projects are concurrently synced, i.e:
 A .yaml config file is expected, The format of the config file is:
 
 github:       # optional: defines GitHub resources
+- baseurl:      # optional: a custom GitHub API URL
   token:        # required: a GitHub API token
   users:        # optional: defines GitHub users
   - name:         # required: GitHub username
     location:     # required: local path to sync to
+  orgs:         # optional: defines GitHub Organization
+  - name:         # required: GitHub username
+    location:     # required: local path to sync to
 gitlab:       # optional: defines GitLab resources
-  baseurl:      # optional: a custom GitLab API URL
+- baseurl:      # optional: a custom GitLab API URL
   token:        # optional: a GitLab API token
   groups:       # optional: defines GitLab groups
   - group:        # required: group ID number
@@ -62,6 +61,15 @@ The config file will will be found, by order of precedence, from:
  - as specified using the --config/-c flag
 
 Treat this file with care, as it may contain secrets.
+
+Usage:
+  gitsync [flags]
+
+Flags:
+  -c, --config string   config file location
+  -d, --debug           debug output (implies verbose)
+  -h, --help            help for gitsync
+  -v, --verbose         verbose output instead of pretty output
 ```
 
 ## Contributing
