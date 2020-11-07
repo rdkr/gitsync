@@ -10,18 +10,19 @@ import (
 )
 
 type Config struct {
-	Github githubConfig `yaml:"github"`
-	Gitlab gitlabConfig `yaml:"gitlab"`
-	Anon   anonConfig   `yaml:"anon"`
+	Github []githubConfig `yaml:"github"`
+	Gitlab []gitlabConfig `yaml:"gitlab"`
+	Anon   anonConfig     `yaml:"anon"`
 }
 
 // Github
 type githubConfig struct {
 	// Groups   []gitlabGroup         `yaml:"groups"`
 	// Projects []Project `yaml:"projects"`
-	Users []githubUser `yaml:"users"`
-	Orgs  []githubOrg  `yaml:"orgs"`
-	Token string       `yaml:"token"`
+	Users   []githubUser `yaml:"users"`
+	Orgs    []githubOrg  `yaml:"orgs"`
+	Token   string       `yaml:"token"`
+	BaseURL string       `yaml:"baseurl"`
 }
 
 type githubUser struct {
@@ -52,8 +53,6 @@ type anonConfig struct {
 	Projects []Project `yaml:"projects"`
 }
 
-type ConfigParser func(Config) ([]User, []Org, []Group, []Project)
-
 func GetGithubItemsFromCfg(cfg Config) ([]User, []Org, []Group, []Project) {
 
 	var users []User
@@ -61,48 +60,41 @@ func GetGithubItemsFromCfg(cfg Config) ([]User, []Org, []Group, []Project) {
 	var groups []Group
 	var projects []Project
 
-	// if len(cfg.Github.Groups) > 0 || len(cfg.Github.Projects) > 0 || len(cfg.Github.Users) > 0 {
-	if len(cfg.Github.Users) > 0 {
+	for _, gh := range cfg.Github {
 
-		var c *github.Client
+		if len(gh.Users) > 0 || len(gh.Orgs) > 0 {
 
-		if cfg.Github.Token != "" {
+			if gh.Token == "" {
+				logrus.Fatal("a token is required to sync GitHub users / orgs")
+			}
+
 			ctx := context.Background()
 			ts := oauth2.StaticTokenSource(
-				&oauth2.Token{AccessToken: cfg.Github.Token},
+				&oauth2.Token{AccessToken: gh.Token},
 			)
 			tc := oauth2.NewClient(ctx, ts)
-			c = github.NewClient(tc)
-		} else {
-			logrus.Fatal("a token is required to sync GitHub users")
-		}
 
-		for _, user := range cfg.Github.Users {
-			users = append(users, &GithubUser{c, user.Name, user.Location, cfg.Github.Token})
-		}
-	}
+			var c *github.Client
+			var err error
 
-	if len(cfg.Github.Orgs) > 0 {
+			if gh.BaseURL != "" {
+				c, err = github.NewEnterpriseClient(gh.BaseURL, "", tc)
+				if err != nil {
+					logrus.Fatal(err)
+				}
+			} else {
+				c = github.NewClient(tc)
+			}
 
-		var c *github.Client
+			for _, user := range gh.Users {
+				users = append(users, &GithubUser{c, user.Name, user.Location, gh.Token})
+			}
 
-		if cfg.Github.Token != "" {
-			ctx := context.Background()
-			ts := oauth2.StaticTokenSource(
-				&oauth2.Token{AccessToken: cfg.Github.Token},
-			)
-			tc := oauth2.NewClient(ctx, ts)
-			c = github.NewClient(tc)
-		} else {
-			logrus.Fatal("a token is required to sync GitHub users")
-		}
-
-		for _, org := range cfg.Github.Orgs {
-			orgs = append(orgs, &GithubOrg{c, org.Name, org.Location, cfg.Github.Token})
+			for _, org := range gh.Orgs {
+				orgs = append(orgs, &GithubOrg{c, org.Name, org.Location, gh.Token})
+			}
 		}
 	}
-
-	projects = append(projects, cfg.Anon.Projects...)
 
 	return users, orgs, groups, projects
 }
@@ -113,30 +105,34 @@ func GetGitlabItemsFromCfg(cfg Config) ([]User, []Group, []Project) {
 	var groups []Group
 	var projects []Project
 
-	if len(cfg.Gitlab.Groups) > 0 || len(cfg.Gitlab.Projects) > 0 {
+	for _, gl := range cfg.Gitlab {
 
-		baseurlOption := gitlab.ClientOptionFunc(nil)
-		if cfg.Gitlab.BaseURL != "" {
-			baseurlOption = gitlab.ClientOptionFunc(gitlab.WithBaseURL(cfg.Gitlab.BaseURL))
-		}
+		if len(gl.Groups) > 0 || len(gl.Projects) > 0 {
 
-		c, err := gitlab.NewClient(cfg.Gitlab.Token, baseurlOption)
-		if err != nil {
-			logrus.Fatalf("GitLab error: %v", err)
-		}
-
-		for _, group := range cfg.Gitlab.Groups {
-			groups = append(groups, &GitlabGroup{c, cfg.Gitlab.Token, "", group.Location, group.Group})
-		}
-
-		for _, project := range cfg.Gitlab.Projects {
-			if project.Token == "" {
-				project.Token = cfg.Gitlab.Token
+			baseurlOption := gitlab.ClientOptionFunc(nil)
+			if gl.BaseURL != "" {
+				baseurlOption = gitlab.ClientOptionFunc(gitlab.WithBaseURL(gl.BaseURL))
 			}
-			projects = append(projects, project)
+
+			c, err := gitlab.NewClient(gl.Token, baseurlOption)
+			if err != nil {
+				logrus.Fatalf("GitLab error: %v", err)
+			}
+
+			for _, group := range gl.Groups {
+				groups = append(groups, &GitlabGroup{c, gl.Token, "", group.Location, group.Group})
+			}
+
+			for _, project := range gl.Projects {
+				if project.Token == "" {
+					project.Token = gl.Token
+				}
+				projects = append(projects, project)
+			}
 		}
 	}
 
+	// we also get the anon projects in this function...
 	projects = append(projects, cfg.Anon.Projects...)
 
 	return users, groups, projects
