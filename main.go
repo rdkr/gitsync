@@ -78,8 +78,8 @@ var rootCmd = &cobra.Command{
 		ui := gitsync.NewUI(isTerminal, verbose, debug)
 
 		// create concurrency managers
-		gl := concurrency.NewGitlabManager(gitsync.GitSyncHelper)
-		gh := concurrency.NewGithubManager(gitsync.GitSyncHelper)
+		gl := concurrency.NewManager(gitsync.GitSyncHelper)
+		gh := concurrency.NewManager(gitsync.GitSyncHelper)
 
 		// create status merger channel
 		statuses := make(chan interface{})

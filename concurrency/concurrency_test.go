@@ -8,14 +8,6 @@ import (
 	"github.com/rdkr/gitsync/concurrency"
 )
 
-type testUser struct {
-	projects []concurrency.Project
-}
-
-func (u *testUser) GetProjects() []concurrency.Project {
-	return u.projects
-}
-
 type testGroup struct {
 	children []concurrency.Group
 	projects []concurrency.Project
@@ -31,56 +23,51 @@ func (g *testGroup) GetProjects() []concurrency.Project {
 
 var concurrencyTests = []struct {
 	name                string
-	mockGetItemsFromCfg func() ([]concurrency.User, []concurrency.Group, []concurrency.Project)
+	mockGetItemsFromCfg func() ([]concurrency.Group, []concurrency.Project)
 }{
 	{
-		name: "NoUsersNoGroupsNoProjects",
-		mockGetItemsFromCfg: func() ([]concurrency.User, []concurrency.Group, []concurrency.Project) {
-			var users []concurrency.User
+		name: "NoGroupsNoProjects",
+		mockGetItemsFromCfg: func() ([]concurrency.Group, []concurrency.Project) {
 			var groups []concurrency.Group
 			var projects []concurrency.Project
-			return users, groups, projects
+			return groups, projects
 		},
 	},
 	{
-		name: "NoUsersNoGroupsAProject",
-		mockGetItemsFromCfg: func() ([]concurrency.User, []concurrency.Group, []concurrency.Project) {
-			var users []concurrency.User
+		name: "NoGroupsAProject",
+		mockGetItemsFromCfg: func() ([]concurrency.Group, []concurrency.Project) {
 			var groups []concurrency.Group
 			projects := []concurrency.Project{
 				{URL: "a", Location: "b", Token: "c"},
 			}
-			return users, groups, projects
+			return groups, projects
 		},
 	},
 	{
-		name: "NoUsersEmptyGroupNoProject",
-		mockGetItemsFromCfg: func() ([]concurrency.User, []concurrency.Group, []concurrency.Project) {
-			var users []concurrency.User
+		name: "EmptyGroupNoProject",
+		mockGetItemsFromCfg: func() ([]concurrency.Group, []concurrency.Project) {
 			groups := []concurrency.Group{
 				&testGroup{children: nil, projects: nil},
 			}
 			var projects []concurrency.Project
-			return users, groups, projects
+			return groups, projects
 		},
 	},
 	{
-		name: "NoUsersEmptyGroupAProject",
-		mockGetItemsFromCfg: func() ([]concurrency.User, []concurrency.Group, []concurrency.Project) {
-			var users []concurrency.User
+		name: "EmptyGroupAProject",
+		mockGetItemsFromCfg: func() ([]concurrency.Group, []concurrency.Project) {
 			groups := []concurrency.Group{
 				&testGroup{children: nil, projects: nil},
 			}
 			projects := []concurrency.Project{
 				{URL: "a", Location: "b", Token: "c"},
 			}
-			return users, groups, projects
+			return groups, projects
 		},
 	},
 	{
-		name: "NoUsersNestedGroupNoProject",
-		mockGetItemsFromCfg: func() ([]concurrency.User, []concurrency.Group, []concurrency.Project) {
-			var users []concurrency.User
+		name: "NestedGroupNoProject",
+		mockGetItemsFromCfg: func() ([]concurrency.Group, []concurrency.Project) {
 			groups := []concurrency.Group{
 				&testGroup{
 					children: []concurrency.Group{
@@ -92,131 +79,12 @@ var concurrencyTests = []struct {
 				},
 			}
 			var projects []concurrency.Project
-			return users, groups, projects
+			return groups, projects
 		},
 	},
 	{
-		name: "NoUsersNestedGroupAProject",
-		mockGetItemsFromCfg: func() ([]concurrency.User, []concurrency.Group, []concurrency.Project) {
-			var users []concurrency.User
-			groups := []concurrency.Group{
-				&testGroup{
-					children: []concurrency.Group{
-						&testGroup{children: nil, projects: nil},
-					},
-					projects: []concurrency.Project{
-						{URL: "a", Location: "b", Token: "c"},
-					},
-				},
-			}
-			projects := []concurrency.Project{
-				{URL: "a", Location: "b", Token: "c"},
-			}
-			return users, groups, projects
-		},
-	},
-	{
-		name: "AUserNoGroupsNoProjects",
-		mockGetItemsFromCfg: func() ([]concurrency.User, []concurrency.Group, []concurrency.Project) {
-			users := []concurrency.User{
-				&testUser{
-					projects: []concurrency.Project{
-						{URL: "a", Location: "b", Token: "c"},
-					},
-				},
-			}
-			var groups []concurrency.Group
-			var projects []concurrency.Project
-			return users, groups, projects
-		},
-	},
-	{
-		name: "AUserNoGroupsAProject",
-		mockGetItemsFromCfg: func() ([]concurrency.User, []concurrency.Group, []concurrency.Project) {
-			users := []concurrency.User{
-				&testUser{
-					projects: []concurrency.Project{
-						{URL: "a", Location: "b", Token: "c"},
-					},
-				},
-			}
-			var groups []concurrency.Group
-			projects := []concurrency.Project{
-				{URL: "a", Location: "b", Token: "c"},
-			}
-			return users, groups, projects
-		},
-	},
-	{
-		name: "AUserEmptyGroupNoProject",
-		mockGetItemsFromCfg: func() ([]concurrency.User, []concurrency.Group, []concurrency.Project) {
-			users := []concurrency.User{
-				&testUser{
-					projects: []concurrency.Project{
-						{URL: "a", Location: "b", Token: "c"},
-					},
-				},
-			}
-			groups := []concurrency.Group{
-				&testGroup{children: nil, projects: nil},
-			}
-			var projects []concurrency.Project
-			return users, groups, projects
-		},
-	},
-	{
-		name: "AUserEmptyGroupAProject",
-		mockGetItemsFromCfg: func() ([]concurrency.User, []concurrency.Group, []concurrency.Project) {
-			users := []concurrency.User{
-				&testUser{
-					projects: []concurrency.Project{
-						{URL: "a", Location: "b", Token: "c"},
-					},
-				},
-			}
-			groups := []concurrency.Group{
-				&testGroup{children: nil, projects: nil},
-			}
-			projects := []concurrency.Project{
-				{URL: "a", Location: "b", Token: "c"},
-			}
-			return users, groups, projects
-		},
-	},
-	{
-		name: "AUserNestedGroupNoProject",
-		mockGetItemsFromCfg: func() ([]concurrency.User, []concurrency.Group, []concurrency.Project) {
-			users := []concurrency.User{
-				&testUser{
-					projects: []concurrency.Project{
-						{URL: "a", Location: "b", Token: "c"},
-					},
-				},
-			}
-			groups := []concurrency.Group{
-				&testGroup{
-					children: []concurrency.Group{
-						&testGroup{children: nil, projects: nil},
-					},
-					projects: []concurrency.Project{
-						{URL: "a", Location: "b", Token: "c"},
-					},
-				},
-			}
-			var projects []concurrency.Project
-			return users, groups, projects
-		},
-	},
-	{
-		name: "AUserNestedGroupAProject",
-		mockGetItemsFromCfg: func() ([]concurrency.User, []concurrency.Group, []concurrency.Project) {
-			users := []concurrency.User{
-				&testUser{
-					projects: []concurrency.Project{
-						{URL: "a", Location: "b", Token: "c"},
-					},
-				},
-			}
+		name: "NestedGroupAProject",
+		mockGetItemsFromCfg: func() ([]concurrency.Group, []concurrency.Project) {
 			groups := []concurrency.Group{
 				&testGroup{
 					children: []concurrency.Group{
@@ -230,7 +98,7 @@ var concurrencyTests = []struct {
 			projects := []concurrency.Project{
 				{URL: "a", Location: "b", Token: "c"},
 			}
-			return users, groups, projects
+			return groups, projects
 		},
 	},
 }
@@ -240,13 +108,13 @@ func TestConcurrency(t *testing.T) {
 	for _, tc := range concurrencyTests {
 		t.Run(tc.name, func(t *testing.T) {
 
-			users, groups, projects := tc.mockGetItemsFromCfg()
+			groups, projects := tc.mockGetItemsFromCfg()
 
-			m := concurrency.NewGitlabManager(func(project concurrency.Project) interface{} {
+			m := concurrency.NewManager(func(project concurrency.Project) interface{} {
 				return nil
 			})
 
-			go m.Start(users, groups, projects)
+			go m.Start(groups, projects)
 
 			for {
 				_, ok := <-m.ProjectChan

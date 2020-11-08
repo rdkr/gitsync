@@ -8,32 +8,6 @@ import (
 	"github.com/xanzy/go-gitlab"
 )
 
-type GitlabManager struct {
-	GroupChan   chan error
-	ProjectChan chan interface{}
-	manager
-}
-
-func NewGitlabManager(projectAction projectActionFunc) GitlabManager {
-	return GitlabManager{
-		GroupChan:   make(chan error),
-		ProjectChan: make(chan interface{}),
-		manager:     newManager(projectAction),
-	}
-}
-
-func (m GitlabManager) projectChanSender(projectAction projectActionFunc, project Project) {
-	m.ProjectChan <- projectAction(project)
-}
-
-func (m GitlabManager) projectsChanCloser() {
-	close(m.ProjectChan)
-}
-
-func (m GitlabManager) Start(users []User, groups []Group, projects []Project) {
-	m.start(users, nil, groups, projects, m.projectChanSender, m.projectsChanCloser)
-}
-
 type GitlabGroup struct {
 	Client       *gitlab.Client
 	Token        string

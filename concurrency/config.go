@@ -17,8 +17,6 @@ type Config struct {
 
 // Github
 type githubConfig struct {
-	// Groups   []gitlabGroup         `yaml:"groups"`
-	// Projects []Project `yaml:"projects"`
 	Users   []githubUser `yaml:"users"`
 	Orgs    []githubOrg  `yaml:"orgs"`
 	Token   string       `yaml:"token"`
@@ -53,10 +51,8 @@ type anonConfig struct {
 	Projects []Project `yaml:"projects"`
 }
 
-func GetGithubItemsFromCfg(cfg Config) ([]User, []Org, []Group, []Project) {
+func GetGithubItemsFromCfg(cfg Config) ([]Group, []Project) {
 
-	var users []User
-	var orgs []Org
 	var groups []Group
 	var projects []Project
 
@@ -87,21 +83,20 @@ func GetGithubItemsFromCfg(cfg Config) ([]User, []Org, []Group, []Project) {
 			}
 
 			for _, user := range gh.Users {
-				users = append(users, &GithubUser{c, user.Name, user.Location, gh.Token})
+				groups = append(groups, &GithubUserGroup{c, user.Name, user.Location, gh.Token})
 			}
 
 			for _, org := range gh.Orgs {
-				orgs = append(orgs, &GithubOrg{c, org.Name, org.Location, gh.Token})
+				groups = append(groups, &GithubOrgGroup{c, org.Name, org.Location, gh.Token})
 			}
 		}
 	}
 
-	return users, orgs, groups, projects
+	return groups, projects
 }
 
-func GetGitlabItemsFromCfg(cfg Config) ([]User, []Group, []Project) {
+func GetGitlabItemsFromCfg(cfg Config) ([]Group, []Project) {
 
-	var users []User
 	var groups []Group
 	var projects []Project
 
@@ -135,5 +130,5 @@ func GetGitlabItemsFromCfg(cfg Config) ([]User, []Group, []Project) {
 	// we also get the anon projects in this function...
 	projects = append(projects, cfg.Anon.Projects...)
 
-	return users, groups, projects
+	return groups, projects
 }
