@@ -3,6 +3,7 @@ package sync
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/sirupsen/logrus"
 
@@ -10,10 +11,10 @@ import (
 )
 
 const (
-	SymbolError    = "\u001b[31m✘ \u001b[0m "
-	SymbolClone    = "\u001b[36m✚  \u001b[0m"
-	SymbolFetch    = "\u001b[33m↓  \u001b[0m"
-	SymbolUpToDate = "\u001b[32m✔ \u001b[0m "
+	SymbolError    = "\u001b[31m✘ \u001b[0m " //red
+	SymbolClone    = "\u001b[36m✚  \u001b[0m" //cyan
+	SymbolFetch    = "\u001b[33m↓  \u001b[0m" //yellow
+	SymbolUpToDate = "\u001b[32m✔ \u001b[0m " //green
 )
 
 type UI struct {
@@ -22,6 +23,7 @@ type UI struct {
 	cloneCount, fetchCount, upToDateCount, errCount int
 	StatusChan                                      chan Status
 	statuses                                        []Status
+	startTime                                       int64
 }
 
 func ShouldBeVerbose(isTerminal, verbose, debug bool) bool {
@@ -50,13 +52,11 @@ func NewUI(isTerminal, verbose, debug bool) UI {
 		errCount:      0,
 		StatusChan:    make(chan Status),
 		statuses:      []Status{},
+		startTime:     time.Now().UTC().UnixNano(),
 	}
 }
 
-func (ui *UI) MakeUI(status Status) string {
-	var sb strings.Builder
-	sb.WriteString("summary:")
-
+func (ui *UI) UpdateUI(status Status) {
 	if status.Path != "" {
 		ui.statuses = append(ui.statuses, status)
 		if status.Err != nil {
@@ -72,6 +72,19 @@ func (ui *UI) MakeUI(status Status) string {
 			}
 		}
 	}
+}
+
+func (ui *UI) MakeUI(done bool) string {
+	var sb strings.Builder
+
+	timer := ((time.Now().UTC().UnixNano()/10000000 - ui.startTime/10000000) / 4) % 4
+	icon := []string{" ◐  ", " ◓  ", " ◑  ", " ◒  "}
+
+	if !done {
+		sb.WriteString(icon[timer])
+	}
+
+	sb.WriteString("summary:")
 
 	if ui.cloneCount > 0 {
 		sb.WriteString(fmt.Sprintf(" %d %s", ui.cloneCount, SymbolClone))
@@ -92,50 +105,58 @@ func (ui *UI) MakeUI(status Status) string {
 }
 
 func (ui *UI) Run() {
+
 	for {
 
-		status, ok := <-ui.StatusChan
-		if !ok {
+		select {
+		case status, ok := <-ui.StatusChan:
+			if !ok {
+				if !ui.verbose {
+					_, err := fmt.Fprint(ui.writer, ui.MakeUI(true))
+					checkErr(err)
+					ui.writer.Stop()
+				}
+				return
+			}
 			if !ui.verbose {
-				ui.writer.Stop()
+				switch status.Status {
+				case StatusCloned:
+					_, err := fmt.Fprintf(ui.writer, " %s%s\n", SymbolClone, status.Path)
+					checkErr(err)
+					ui.writer.Stop()
+					ui.writer = uilive.New()
+					ui.writer.Start()
+				case StatusError:
+					_, err := fmt.Fprintf(ui.writer, " %s%s - %s\n", SymbolError, status.Path, status.Err)
+					checkErr(err)
+					ui.writer.Stop()
+					ui.writer = uilive.New()
+					ui.writer.Start()
+				}
+
+				ui.UpdateUI(status)
+
+			} else {
+				fields := logrus.Fields{"path": status.Path}
+				switch status.Status {
+				case StatusError:
+					logrus.WithFields(fields).WithField("error", status.Err).Warn("error")
+				case StatusCloned:
+					logrus.WithFields(fields).Info("cloned")
+				case StatusFetched:
+					logrus.WithFields(fields).Debug("fetched")
+				case StatusUpToDate:
+					logrus.WithFields(fields).Debug("up to date")
+				}
 			}
-			break
+		case <-time.After(10 * time.Millisecond):
 		}
 
-		if !ui.verbose {
-			switch status.Status {
-			case StatusCloned:
-				_, err := fmt.Fprintf(ui.writer, " %s%s\n", SymbolClone, status.Path)
-				checkErr(err)
-				ui.writer.Stop()
-				ui.writer = uilive.New()
-				ui.writer.Start()
-			case StatusError:
-				_, err := fmt.Fprintf(ui.writer, " %s%s - %s\n", SymbolError, status.Path, status.Err)
-				checkErr(err)
-				ui.writer.Stop()
-				ui.writer = uilive.New()
-				ui.writer.Start()
-			}
+		_, err := fmt.Fprint(ui.writer, ui.MakeUI(false))
+		checkErr(err)
+		err = ui.writer.Flush()
+		checkErr(err)
 
-			_, err := fmt.Fprint(ui.writer, ui.MakeUI(status))
-			checkErr(err)
-			err = ui.writer.Flush()
-			checkErr(err)
-
-		} else {
-			fields := logrus.Fields{"path": status.Path}
-			switch status.Status {
-			case StatusError:
-				logrus.WithFields(fields).WithField("error", status.Err).Warn("error")
-			case StatusCloned:
-				logrus.WithFields(fields).Info("cloned")
-			case StatusFetched:
-				logrus.WithFields(fields).Debug("fetched")
-			case StatusUpToDate:
-				logrus.WithFields(fields).Debug("up to date")
-			}
-		}
 	}
 }
 

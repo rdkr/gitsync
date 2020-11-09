@@ -12,8 +12,8 @@ import (
 
 func main() {
 
-	statuses := 10
-	delayTime := time.Millisecond //* 2000
+	statuses := 20
+	delayTime := time.Millisecond * 200
 
 	ui := gs.NewUI(true, false, false)
 
