@@ -77,7 +77,8 @@ func (ui *UI) UpdateUI(status Status) {
 func (ui *UI) MakeUI(done bool) string {
 	var sb strings.Builder
 
-	timer := ((time.Now().UTC().UnixNano()/10000000 - ui.startTime/10000000) / 4) % 4
+	elapsed := time.Now().UTC().UnixNano() - ui.startTime
+	timer := ((elapsed / 10000000) / 4) % 4
 	icon := []string{" ◐  ", " ◓  ", " ◑  ", " ◒  "}
 
 	if !done {
@@ -151,12 +152,12 @@ func (ui *UI) Run() {
 			}
 		case <-time.After(10 * time.Millisecond):
 		}
-
-		_, err := fmt.Fprint(ui.writer, ui.MakeUI(false))
-		checkErr(err)
-		err = ui.writer.Flush()
-		checkErr(err)
-
+		if !ui.verbose {
+			_, err := fmt.Fprint(ui.writer, ui.MakeUI(false))
+			checkErr(err)
+			err = ui.writer.Flush()
+			checkErr(err)
+		}
 	}
 }
 

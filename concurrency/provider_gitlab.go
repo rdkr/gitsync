@@ -19,6 +19,8 @@ type GitlabGroup struct {
 func (g *GitlabGroup) GetGroups() []Group {
 	var result []Group
 
+	logrus.WithField("user", g.ID).Debug("getting gitlab groups by group")
+
 	parent, _, err := g.Client.Groups.GetGroup(g.ID)
 	if err != nil {
 		logrus.Fatal(err)
@@ -49,6 +51,8 @@ func (g *GitlabGroup) GetGroups() []Group {
 
 func (g *GitlabGroup) GetProjects() []Project {
 	var result []Project
+
+	logrus.WithField("user", g.ID).Debug("getting gitlab projects by group")
 
 	projects, _, err := g.Client.Groups.ListGroupProjects(g.ID, &gitlab.ListGroupProjectsOptions{
 		Archived: gitlab.Bool(false),

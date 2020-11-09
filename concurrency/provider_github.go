@@ -21,7 +21,7 @@ func (g *GithubUserGroup) GetGroups() []Group {
 func (g *GithubUserGroup) GetProjects() []Project {
 	var result []Project
 
-	logrus.Debug("getting projects by user")
+	logrus.WithField("user", g.Name).Debug("getting github projects by user")
 
 	var allRepos []*github.Repository
 	opt := &github.RepositoryListOptions{
@@ -62,7 +62,7 @@ func (g *GithubOrgGroup) GetGroups() []Group {
 func (g *GithubOrgGroup) GetProjects() []Project {
 	var result []Project
 
-	logrus.Debug("getting projects by org")
+	logrus.WithField("org", g.Name).Debug("getting github projects by org")
 
 	var allRepos []*github.Repository
 	opt := &github.RepositoryListByOrgOptions{}
@@ -98,7 +98,7 @@ type GithubTeamGroup struct {
 func (g *GithubTeamGroup) GetGroups() []Group {
 	var result []Group
 
-	logrus.Debug("getting groups by team")
+	logrus.WithField("team", g.Name).Debug("getting github groups by team")
 
 	var allTeams []*github.Team
 	opt := &github.ListOptions{}
@@ -125,7 +125,7 @@ func (g *GithubTeamGroup) GetGroups() []Group {
 func (g *GithubTeamGroup) GetProjects() []Project {
 	var result []Project
 
-	logrus.Debug("getting projects by team")
+	logrus.WithField("team", g.Name).Debug("getting github projects by team")
 
 	var allRepos []*github.Repository
 	opt := &github.ListOptions{}
