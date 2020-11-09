@@ -5,6 +5,9 @@ gitsync is a tool to keep many local repos in sync with their remote hosts.
 It supports recursively syncing GitHub orgs, GitHub users, GitLab groups, and individual
 repos. Repos are synced over HTTPS, optionally / where required using auth tokens.
 
+## ⚠️ Breaking change warning!
+The config file structure changed recently. The GitHub and GitLab sections are now lists of the original maps: https://github.com/rdkr/gitsync/commit/7135e5a38e087efaa2dbf3eedd94ea849812172e#
+
 ## Install
 
 ```
