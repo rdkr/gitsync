@@ -14,25 +14,34 @@ type GithubUserGroup struct {
 	Token    string
 }
 
-func (u *GithubUserGroup) GetGroups() []Group {
+func (g *GithubUserGroup) GetGroups() []Group {
 	return []Group{}
 }
 
-func (u *GithubUserGroup) GetProjects() []Project {
+func (g *GithubUserGroup) GetProjects() []Project {
 	var result []Project
 
-	logrus.Debug("getting projects")
+	logrus.Debug("getting projects by user")
 
-	projects, _, err := u.Client.Repositories.List(context.Background(), "", &github.RepositoryListOptions{
+	var allRepos []*github.Repository
+	opt := &github.RepositoryListOptions{
 		Type: "owner",
-	})
-	if err != nil {
-		logrus.Fatal(err)
+	}
+	for {
+		repos, resp, err := g.Client.Repositories.List(context.Background(), "", opt)
+		if err != nil {
+			logrus.Fatal(err)
+		}
+		allRepos = append(allRepos, repos...)
+		if resp.NextPage == 0 {
+			break
+		}
+		opt.Page = resp.NextPage
 	}
 
-	for _, p := range projects {
-		if !*p.Archived {
-			result = append(result, Project{*p.CloneURL, u.Location + "/" + *p.Name, u.Token})
+	for _, r := range allRepos {
+		if !*r.Archived {
+			result = append(result, Project{*r.CloneURL, g.Location + "/" + *r.Name, g.Token})
 		}
 	}
 
@@ -46,26 +55,95 @@ type GithubOrgGroup struct {
 	Token    string
 }
 
-func (u *GithubOrgGroup) GetGroups() []Group {
+func (g *GithubOrgGroup) GetGroups() []Group {
 	return []Group{}
 }
 
-func (o *GithubOrgGroup) GetProjects() []Project {
+func (g *GithubOrgGroup) GetProjects() []Project {
 	var result []Project
 
 	logrus.Debug("getting projects by org")
 
-	if o.Name != "" {
-		projectsByOrg, _, err := o.Client.Repositories.ListByOrg(context.Background(), o.Name, &github.RepositoryListByOrgOptions{})
-
+	var allRepos []*github.Repository
+	opt := &github.RepositoryListByOrgOptions{}
+	for {
+		repos, resp, err := g.Client.Repositories.ListByOrg(context.Background(), g.Name, opt)
 		if err != nil {
 			logrus.Fatal(err)
 		}
+		allRepos = append(allRepos, repos...)
+		if resp.NextPage == 0 {
+			break
+		}
+		opt.Page = resp.NextPage
+	}
 
-		for _, p := range projectsByOrg {
-			if !*p.Archived {
-				result = append(result, Project{*p.CloneURL, o.Location + "/" + *p.Name, o.Token})
-			}
+	for _, r := range allRepos {
+		if !*r.Archived {
+			result = append(result, Project{*r.CloneURL, g.Location + "/" + *r.Name, g.Token})
+		}
+	}
+
+	return result
+}
+
+type GithubTeamGroup struct {
+	Client   *github.Client
+	Org      string
+	Name     string
+	Location string
+	Token    string
+}
+
+func (g *GithubTeamGroup) GetGroups() []Group {
+	var result []Group
+
+	logrus.Debug("getting groups by team")
+
+	var allTeams []*github.Team
+	opt := &github.ListOptions{}
+	for {
+		teams, resp, err := g.Client.Teams.ListChildTeamsByParentSlug(context.Background(), g.Org, g.Name, opt)
+		if err != nil {
+			logrus.Fatal(err)
+		}
+		allTeams = append(allTeams, teams...)
+		if resp.NextPage == 0 {
+			break
+		}
+		opt.Page = resp.NextPage
+	}
+
+	for _, child := range allTeams {
+		result = append(result, &GithubTeamGroup{g.Client, g.Org, *child.Slug, g.Location + "/" + *child.Slug, g.Token})
+	}
+
+	return result
+
+}
+
+func (g *GithubTeamGroup) GetProjects() []Project {
+	var result []Project
+
+	logrus.Debug("getting projects by team")
+
+	var allRepos []*github.Repository
+	opt := &github.ListOptions{}
+	for {
+		repos, resp, err := g.Client.Teams.ListTeamReposBySlug(context.Background(), g.Org, g.Name, opt)
+		if err != nil {
+			logrus.Fatal(err)
+		}
+		allRepos = append(allRepos, repos...)
+		if resp.NextPage == 0 {
+			break
+		}
+		opt.Page = resp.NextPage
+	}
+
+	for _, r := range allRepos {
+		if !*r.Archived {
+			result = append(result, Project{*r.CloneURL, g.Location + "/" + *r.Name, g.Token})
 		}
 	}
 

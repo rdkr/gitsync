@@ -2,8 +2,7 @@
 
 gitsync is a tool to keep many local repos in sync with their remote hosts.
 
-It supports recursively syncing GitHub orgs, GitHub users, GitLab groups, and individual
-repos. Repos are synced over HTTPS, optionally / where required using auth tokens.
+It supports recursively syncing GitHub orgs, teams, and users; GitLab groups; and individual repos. Repos are synced over HTTPS, optionally / where required using auth tokens.
 
 ## ⚠️ Breaking change warning!
 The config file structure changed recently. The GitHub and GitLab sections are now lists of the original maps: https://github.com/rdkr/gitsync/commit/7135e5a38e087efaa2dbf3eedd94ea849812172e#
@@ -18,13 +17,13 @@ go install github.com/rdkr/gitsync
 ```
 gitsync is a tool to keep many local repos in sync with their remote hosts.
 
-It supports recursively syncing GitHub orgs, GitHub users, GitLab groups, and individual
+It supports recursively syncing GitHub orgs, teams, and users; GitLab groups; and individual
 repos. Repos are synced over HTTPS, optionally / where required using auth tokens.
 
-                Users'   Orgs'   Groups'   Repos'
-    GitHub        x        x
-    GitLab                          x        x
-    HTTPS                                    x
+              Orgs'    Groups' / Teams'    Users'    Repos'
+    GitHub      x              x             x
+    GitLab                     x                       x
+    HTTPS                                              x
 
 Orgs / groups / user profiles are enumerated / recursed to find projects. All projects
 are then concurrently synced, i.e:
@@ -40,8 +39,12 @@ github:       # optional: defines GitHub resources
   users:        # optional: defines GitHub users
   - name:         # required: GitHub username
     location:     # required: local path to sync to
-  orgs:         # optional: defines GitHub Organization
-  - name:         # required: GitHub username
+  orgs:         # optional: defines GitHub organisations
+  - name:         # required: GitHub org name
+    location:     # required: local path to sync to
+  teams:        # optional: defines GitHub teams
+  - org:          # required: GitHub org name
+    name:         # required: GitHub team name
     location:     # required: local path to sync to
 gitlab:       # optional: defines GitLab resources
 - baseurl:      # optional: a custom GitLab API URL

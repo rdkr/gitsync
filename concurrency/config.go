@@ -19,6 +19,7 @@ type Config struct {
 type githubConfig struct {
 	Users   []githubUser `yaml:"users"`
 	Orgs    []githubOrg  `yaml:"orgs"`
+	Teams   []githubTeam `yaml:"teams"`
 	Token   string       `yaml:"token"`
 	BaseURL string       `yaml:"baseurl"`
 }
@@ -29,6 +30,12 @@ type githubUser struct {
 }
 
 type githubOrg struct {
+	Name     string `yaml:"name"`
+	Location string `yaml:"location"`
+}
+
+type githubTeam struct {
+	Org      string `yaml:"org"`
 	Name     string `yaml:"name"`
 	Location string `yaml:"location"`
 }
@@ -58,10 +65,10 @@ func GetGithubItemsFromCfg(cfg Config) ([]Group, []Project) {
 
 	for _, gh := range cfg.Github {
 
-		if len(gh.Users) > 0 || len(gh.Orgs) > 0 {
+		if len(gh.Users) > 0 || len(gh.Orgs) > 0 || len(gh.Teams) > 0 {
 
 			if gh.Token == "" {
-				logrus.Fatal("a token is required to sync GitHub users / orgs")
+				logrus.Fatal("a token is required to sync GitHub users / orgs / teams")
 			}
 
 			ctx := context.Background()
@@ -88,6 +95,10 @@ func GetGithubItemsFromCfg(cfg Config) ([]Group, []Project) {
 
 			for _, org := range gh.Orgs {
 				groups = append(groups, &GithubOrgGroup{c, org.Name, org.Location, gh.Token})
+			}
+
+			for _, team := range gh.Teams {
+				groups = append(groups, &GithubTeamGroup{c, team.Org, team.Name, team.Location, gh.Token})
 			}
 		}
 	}
