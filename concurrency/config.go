@@ -58,10 +58,11 @@ type anonConfig struct {
 	Projects []Project `yaml:"projects"`
 }
 
-func GetGithubItemsFromCfg(cfg Config) ([]Group, []Project) {
+func GetGithubItemsFromCfg(cfg Config) ([]Group, []Project, []string) {
 
 	var groups []Group
 	var projects []Project
+	var locations []string
 
 	for _, gh := range cfg.Github {
 
@@ -91,25 +92,29 @@ func GetGithubItemsFromCfg(cfg Config) ([]Group, []Project) {
 
 			for _, user := range gh.Users {
 				groups = append(groups, &GithubUserGroup{c, user.Name, user.Location, gh.Token})
+				locations = append(locations, user.Location)
 			}
 
 			for _, org := range gh.Orgs {
 				groups = append(groups, &GithubOrgGroup{c, org.Name, org.Location, gh.Token})
+				locations = append(locations, org.Location)
 			}
 
 			for _, team := range gh.Teams {
 				groups = append(groups, &GithubTeamGroup{c, team.Org, team.Name, team.Location, gh.Token})
+				locations = append(locations, team.Location)
 			}
 		}
 	}
 
-	return groups, projects
+	return groups, projects, locations
 }
 
-func GetGitlabItemsFromCfg(cfg Config) ([]Group, []Project) {
+func GetGitlabItemsFromCfg(cfg Config) ([]Group, []Project, []string) {
 
 	var groups []Group
 	var projects []Project
+	var locations []string
 
 	for _, gl := range cfg.Gitlab {
 
@@ -127,6 +132,7 @@ func GetGitlabItemsFromCfg(cfg Config) ([]Group, []Project) {
 
 			for _, group := range gl.Groups {
 				groups = append(groups, &GitlabGroup{c, gl.Token, "", group.Location, group.Group})
+				locations = append(locations, group.Location)
 			}
 
 			for _, project := range gl.Projects {
@@ -141,5 +147,5 @@ func GetGitlabItemsFromCfg(cfg Config) ([]Group, []Project) {
 	// we also get the anon projects in this function...
 	projects = append(projects, cfg.Anon.Projects...)
 
-	return groups, projects
+	return groups, projects, locations
 }

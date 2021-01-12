@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"os"
 	"sync"
 
@@ -16,6 +17,7 @@ import (
 var cfgFile string
 var verbose bool
 var debug bool
+var unmanaged bool
 var cfg concurrency.Config
 
 const usage = `gitsync is a tool to keep many local repos in sync with their remote hosts.
@@ -77,6 +79,11 @@ var rootCmd = &cobra.Command{
 	Long:  usage,
 	Run: func(cmd *cobra.Command, args []string) {
 
+		// empty lists to store root directories to sync to and all paths that
+		// are synced to in order to find 'unmanaged' git directories
+		var syncLocations []string
+		var syncedPaths []string
+
 		// create ui
 		isTerminal := terminal.IsTerminal(int(os.Stdout.Fd()))
 		ui := gitsync.NewUI(isTerminal, verbose, debug)
@@ -94,8 +101,14 @@ var rootCmd = &cobra.Command{
 
 		// start concurrency manager
 		go func() {
-			gl.Start(concurrency.GetGitlabItemsFromCfg(cfg))
-			gh.Start(concurrency.GetGithubItemsFromCfg(cfg))
+			groups, projects, gitlabLocations := concurrency.GetGitlabItemsFromCfg(cfg)
+			gl.Start(groups, projects)
+			syncLocations = append(syncLocations, gitlabLocations...)
+
+			groups, projects, githubLocations := concurrency.GetGithubItemsFromCfg(cfg)
+			gh.Start(groups, projects)
+			syncLocations = append(syncLocations, githubLocations...)
+
 			wg.Done()
 		}()
 
@@ -119,8 +132,17 @@ var rootCmd = &cobra.Command{
 					break
 				}
 				s, _ := status.(gitsync.Status)
+				syncedPaths = append(syncedPaths, s.Path)
 				ui.StatusChan <- s
 			}
+
+			if unmanaged {
+				for _, path := range gitsync.Unmanaged(syncLocations, syncedPaths) {
+					err := errors.New("not in upstream parent")
+					ui.StatusChan <- gitsync.Status{path, gitsync.StatusUnmanaged, "", err}
+				}
+			}
+
 			close(ui.StatusChan)
 			wg.Done()
 		}()
@@ -141,7 +163,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "config file location")
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "verbose output instead of pretty output")
 	rootCmd.PersistentFlags().BoolVarP(&debug, "debug", "d", false, "debug output (implies verbose)")
-
+	rootCmd.PersistentFlags().BoolVarP(&unmanaged, "unmanaged", "u", false, "shows local repos not in upstream parent")
 }
 
 // initConfig reads in config file and ENV variables if set.
