@@ -11,19 +11,20 @@ import (
 )
 
 const (
-	SymbolError    = "\u001b[31m✘ \u001b[0m " //red
-	SymbolClone    = "\u001b[36m✚  \u001b[0m" //cyan
-	SymbolFetch    = "\u001b[33m↓  \u001b[0m" //yellow
-	SymbolUpToDate = "\u001b[32m✔ \u001b[0m " //green
+	SymbolError     = "\u001b[31m✗  \u001b[0m" //red
+	SymbolClone     = "\u001b[36m+  \u001b[0m" //cyan
+	SymbolFetch     = "\u001b[33m↓  \u001b[0m" //yellow
+	SymbolUpToDate  = "\u001b[32m✓  \u001b[0m" //green
+	SymbolUnmanaged = "\u001b[33m!  \u001b[0m"
 )
 
 type UI struct {
-	verbose                                         bool
-	writer                                          *uilive.Writer
-	cloneCount, fetchCount, upToDateCount, errCount int
-	StatusChan                                      chan Status
-	statuses                                        []Status
-	startTime                                       int64
+	verbose                                                         bool
+	writer                                                          *uilive.Writer
+	cloneCount, fetchCount, upToDateCount, errCount, unmanagedCount int
+	StatusChan                                                      chan Status
+	statuses                                                        []Status
+	startTime                                                       int64
 }
 
 func ShouldBeVerbose(isTerminal, verbose, debug bool) bool {
@@ -44,15 +45,16 @@ func NewUI(isTerminal, verbose, debug bool) UI {
 	}
 
 	return UI{
-		verbose:       verbose,
-		writer:        writer,
-		cloneCount:    0,
-		fetchCount:    0,
-		upToDateCount: 0,
-		errCount:      0,
-		StatusChan:    make(chan Status),
-		statuses:      []Status{},
-		startTime:     time.Now().UTC().UnixNano(),
+		verbose:        verbose,
+		writer:         writer,
+		cloneCount:     0,
+		fetchCount:     0,
+		upToDateCount:  0,
+		errCount:       0,
+		unmanagedCount: 0,
+		StatusChan:     make(chan Status),
+		statuses:       []Status{},
+		startTime:      time.Now().UTC().UnixNano(),
 	}
 }
 
@@ -69,6 +71,8 @@ func (ui *UI) UpdateUI(status Status) {
 				ui.fetchCount = ui.fetchCount + 1
 			case StatusUpToDate:
 				ui.upToDateCount = ui.upToDateCount + 1
+			case StatusUnmanaged:
+				ui.unmanagedCount = ui.unmanagedCount + 1
 			}
 		}
 	}
@@ -98,6 +102,9 @@ func (ui *UI) MakeUI(done bool) string {
 	}
 	if ui.errCount > 0 {
 		sb.WriteString(fmt.Sprintf(" %d %s", ui.errCount, SymbolError))
+	}
+	if ui.unmanagedCount > 0 {
+		sb.WriteString(fmt.Sprintf(" %d %s", ui.unmanagedCount, SymbolUnmanaged))
 	}
 
 	sb.WriteString("\n")
@@ -133,6 +140,12 @@ func (ui *UI) Run() {
 					ui.writer.Stop()
 					ui.writer = uilive.New()
 					ui.writer.Start()
+				case StatusUnmanaged:
+					_, err := fmt.Fprintf(ui.writer, " %s%s - %s\n", SymbolUnmanaged, status.Path, status.Err)
+					checkErr(err)
+					ui.writer.Stop()
+					ui.writer = uilive.New()
+					ui.writer.Start()
 				}
 
 				ui.UpdateUI(status)
@@ -141,13 +154,15 @@ func (ui *UI) Run() {
 				fields := logrus.Fields{"path": status.Path}
 				switch status.Status {
 				case StatusError:
-					logrus.WithFields(fields).WithField("error", status.Err).Warn("error")
+					logrus.WithFields(fields).Warn(status.Err)
 				case StatusCloned:
 					logrus.WithFields(fields).Info("cloned")
 				case StatusFetched:
-					logrus.WithFields(fields).Debug("fetched")
+					logrus.WithFields(fields).Info("fetched")
 				case StatusUpToDate:
-					logrus.WithFields(fields).Debug("up to date")
+					logrus.WithFields(fields).Info("up to date")
+				case StatusUnmanaged:
+					logrus.WithFields(fields).Warn("unmanaged")
 				}
 			}
 		case <-time.After(10 * time.Millisecond):

@@ -13,7 +13,7 @@ import (
 func main() {
 
 	statuses := 20
-	delayTime := time.Millisecond * 200
+	delayTime := time.Millisecond * 100
 
 	ui := gs.NewUI(true, false, false)
 
@@ -44,6 +44,7 @@ func getStatus(i int) gs.Status {
 		{"testpath2", gs.StatusFetched, "", nil},
 		{"testpath3", gs.StatusCloned, "", nil},
 		{"testpath4", gs.StatusUpToDate, "", nil},
+		{"testpath4", gs.StatusUnmanaged, "", nil},
 	}
 	s := rand.NewSource(int64(1337 + i))
 	r := rand.New(s)

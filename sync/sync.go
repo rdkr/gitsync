@@ -14,6 +14,7 @@ const (
 	StatusCloned
 	StatusFetched
 	StatusUpToDate
+	StatusUnmanaged
 )
 
 type Status struct {
