@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"os"
+	"sort"
 	"sync"
 
 	"github.com/mitchellh/go-homedir"
@@ -137,7 +138,12 @@ var rootCmd = &cobra.Command{
 			}
 
 			if unmanaged {
+				var unmanagedPaths []string
 				for _, path := range gitsync.Unmanaged(syncLocations, syncedPaths) {
+					unmanagedPaths = append(unmanagedPaths, path)
+				}
+				sort.Strings(unmanagedPaths)
+				for _, path := range unmanagedPaths {
 					err := errors.New("not in upstream parent")
 					ui.StatusChan <- gitsync.Status{path, gitsync.StatusUnmanaged, "", err}
 				}
